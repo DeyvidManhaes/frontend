@@ -5,7 +5,7 @@ export default class Rodape extends Component {
     return (
       <footer className='row fixed-bottom mt-2'>
         <div className='col-12 bg-dark text-white p-1 text-center'>
-            Rodapé
+            LattesProduction - DS1
         </div>
         
       </footer>
