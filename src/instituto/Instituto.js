@@ -11,10 +11,10 @@ export default class Instituto extends Component {
   render() {
     return (
       <div className='p-2 mt-5'>
-        <Menu />
+        
         <h1>CRUD de Instituto</h1>
         <InstitutoList />
-        <Rodape />
+        
       </div>
     );
   }

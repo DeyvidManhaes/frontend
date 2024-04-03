@@ -9,29 +9,83 @@ export default class InstitutoList extends Component {
     this.state = {
       currentPage: 1,
       itemsPerPage: 5,
-      institutos: []
+      nome: "",
+      acronimo: "",
+      institutos: [],
+      institutoSelecionado: null,
+      opcaoBusca: 'todos', // Opções: 'todos', 'nome', 'acronimo'
+      termoBusca: '',
+      alterar: false,
+      id:""
     };
+  }
+  iniciaralterar = (instituto) =>
+  txtnome_change = (event) => {
+    this.setState({ nome: event.target.value });
+  }
+
+  txtacronimo_change = (event) => {
+    this.setState({ acronimo: event.target.value });
+  }
+
+  handleOpcaoBuscaChange = (event) => {
+    this.setState({ opcaoBusca: event.target.value });
+  }
+
+  handleTermoBuscaChange = (event) => {
+    this.setState({ termoBusca: event.target.value });
+  }
+
+  gravarinstituto = () => {
+    const { opcaoBusca, termoBusca } = this.state;
+
+    // Lógica para buscar os institutos com base na opção de busca e no termo
+    let url = window.servidor + '/instituto/exibir';
+    if (opcaoBusca === 'nome') {
+      url += `?nome=${termoBusca}`;
+    } else if (opcaoBusca === 'acronimo') {
+      url += `?acronimo=${termoBusca}`;
+    }
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => this.setState({ institutos: data }));
+  }
+
+  componentDidMount() {
+    this.preencherListInstituto();
+  }
+
+  preencherListInstituto = () => {
+    // Lógica para buscar a lista de institutos do servidor
+    fetch(window.servidor + '/instituto/exibir')
+      .then(response => response.json())
+      .then(data => this.setState({ institutos: data }));
+  }
+
+  handleAplicarFiltro = () => {
+    this.gravarinstituto();
   }
 
   renderItems = () => {
-    const { currentPage, itemsPerPage, institutos } = this.state;
+    const { currentPage, itemsPerPage, institutos, institutoSelecionado } = this.state;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = institutos.slice(indexOfFirstItem, indexOfLastItem);
-    
+
     return currentItems.map((instituto, index) => (
-      <TableRow key={index}>
+      <TableRow key={index} className={instituto === institutoSelecionado ? 'selected' : ''} onClick={() => this.handleSelect(instituto)}>
         <TableCell>{instituto.nome}</TableCell>
         <TableCell>{instituto.acronimo}</TableCell>
         <TableCell>
-          <Button onClick={() => this.handleSelect(instituto)}>Selecionar</Button>
+          <input type="checkbox" checked={instituto === institutoSelecionado} onChange={() => this.handleSelect(instituto)} />
         </TableCell>
       </TableRow>
     ));
   };
 
   handleSelect = (instituto) => {
-    // Lógica para selecionar o instituto e habilitar os botões de editar e excluir
+    this.setState({ institutoSelecionado: instituto === this.state.institutoSelecionado ? null : instituto });
   };
 
   handleChangeItemsPerPage = (event) => {
@@ -43,26 +97,37 @@ export default class InstitutoList extends Component {
   };
 
   render() {
-    const { currentPage, itemsPerPage, institutos } = this.state;
+    const { currentPage, itemsPerPage, opcaoBusca, termoBusca, institutos } = this.state;
     const totalPages = Math.ceil(institutos.length / itemsPerPage);
-    const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
+    const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+    let institutosFiltrados = institutos;
+    if (termoBusca.trim() !== '') {
+      institutosFiltrados = institutos.filter(instituto => {
+        if (opcaoBusca === 'nome') {
+          return instituto.nome.toLowerCase().startsWith(termoBusca.toLowerCase());
+        } else if (opcaoBusca === 'acronimo') {
+          return instituto.acronimo.toLowerCase().startsWith(termoBusca.toLowerCase());
+        } else {
+          return instituto.nome.toLowerCase().startsWith(termoBusca.toLowerCase()) ||
+                 instituto.acronimo.toLowerCase().startsWith(termoBusca.toLowerCase());
+        }
+      });
     }
 
     return (
       <div>
         <div className="pl-5 search-container">
           <div className="pl-5 termo">
-            Termo:<input type="text" placeholder="Digite aqui" />
-            <button type="button" className="btn btn-secondary"><i className="bi bi-search"></i></button>
+            Termo:<input type="text" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+            <button type="button" className="btn btn-secondary" onClick={this.handleAplicarFiltro}><i className="bi bi-search"></i></button>
           </div>
           <div className="box1">Campo:</div>
           <div className="box2">
-            <select aria-label="Default select example">
-              <option selected>Todos</option>
-              <option value="1">Nome</option>
-              <option value="2">Acrônimo</option>
+            <select value={opcaoBusca} onChange={this.handleOpcaoBuscaChange} aria-label="Default select example">
+              <option value="todos">Todos</option>
+              <option value="nome">Nome</option>
+              <option value="acronimo">Acrônimo</option>
             </select>
           </div>
           <button type="button" className="btn btn-primary ml-3">Aplicar</button>
@@ -77,38 +142,38 @@ export default class InstitutoList extends Component {
             </TableRow>
           </TableHead>
           <TableBody>
-            {this.renderItems()}
+            {this.renderItems(institutosFiltrados)}
           </TableBody>
         </Table>
-        
-        <Button component={Link} to="/instituto/novo" variant="contained" className='mt-3 pl-5'color="primary">Incluir</Button>
+
+        <Button component={Link} to="/instituto/novo" variant="contained" className='mt-3 pl-5' color="primary">Incluir</Button>
         <Button component={Link} to="/instituto/editar" variant="contained" className='mt-3 pl-5' color="primary">Editar</Button>
         <Button component={Link} to="/instituto/excluir" variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
 
         <nav aria-label="Page navigation example" className="mt-3">
           <ul className="pagination justify-content-center">
             <li className="page-item">
-              <a className="page-link" href="#" onClick={() => this.paginate(1)} aria-label="First">
+              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(1)} aria-label="First">
                 <span aria-hidden="true">&lt;&lt;</span>
               </a>
             </li>
             <li className="page-item">
-              <a className="page-link" href="#" onClick={() => this.paginate(currentPage - 1)} aria-label="Previous">
+              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(currentPage - 1)} aria-label="Previous">
                 <span aria-hidden="true">&lt;</span>
               </a>
             </li>
             {pageNumbers.map((number) => (
               <li key={number} className={`page-item ${number === currentPage ? 'active' : ''}`}>
-                <a className="page-link" href="#" onClick={() => this.paginate(number)}>{number}</a>
+                <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(number)}>{number}</a>
               </li>
             ))}
             <li className="page-item">
-              <a className="page-link" href="#" onClick={() => this.paginate(currentPage + 1)} aria-label="Next">
+              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(currentPage + 1)} aria-label="Next">
                 <span aria-hidden="true">&gt;</span>
               </a>
             </li>
             <li className="page-item">
-              <a className="page-link" href="#" onClick={() => this.paginate(totalPages)} aria-label="Last">
+              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(totalPages)} aria-label="Last">
                 <span aria-hidden="true">&gt;&gt;</span>
               </a>
             </li>
@@ -127,6 +192,7 @@ export default class InstitutoList extends Component {
     );
   }
 }
+
 
 
 
