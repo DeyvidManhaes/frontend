@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
+import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow } from '@material-ui/core';
 import { Link } from 'react-router-dom';
-import { Table, TableHead, TableBody, TableCell, TableRow, Button } from '@material-ui/core';
-import './InstitutoList.css';
 
 export default class InstitutoList extends Component {
   constructor(props) {
@@ -15,11 +14,84 @@ export default class InstitutoList extends Component {
       institutoSelecionado: null,
       opcaoBusca: 'todos', // Opções: 'todos', 'nome', 'acronimo'
       termoBusca: '',
-      alterar: false,
-      id:""
+      alterando: false,
+      openDialog: false,
+      id: ""
     };
   }
-  iniciaralterar = (instituto) =>
+
+  iniciarAlterar = (instituto) => {
+    this.setState({ alterando: true, nome: instituto.nome, id: instituto.id, acronimo: instituto.acronimo });
+  }
+
+  gravarAlterar = () => {
+    const dados = {
+      "id": this.state.id,
+      "nome": this.state.nome,
+      "acronimo": this.state.acronimo
+    }
+
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    };
+
+    const url = window.servidor + '/instituto/alterar';
+    fetch(url, requestOptions)
+      .then(response => {
+        console.log('Instituto alterado: ' + this.state.nome);
+        this.setState({ alterando: false }); // Definindo alterando como falso após a alteração
+        this.preencherListInstituto(); // Atualizando a lista de institutos após a alteração
+      })
+      .catch(error => console.log(error));
+  }
+  excluir = (instituto) => {
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    };
+  
+    const url = window.servidor + '/instituto/excluir/' + instituto.id;
+    fetch(url, requestOptions)
+      .then(response => {
+        console.log('Instituto Excluído: ' + instituto.nome);
+        this.preencherListInstituto(); // Atualizando a lista de institutos após a exclusão
+      })
+      .catch(error => console.log(error));
+  };
+  
+
+  renderAlterar = () => {
+    return (
+      <div className='mt-5 p-2 col-3'>
+        <h1>Editar Instituto</h1>
+        <TextField label="Id" fullWidth margin="normal" value={this.state.id} />
+        <TextField label="Nome" fullWidth margin="normal" value={this.state.nome} onChange={this.txtnome_change} />
+        <TextField label="Acrônimo" fullWidth margin="normal" value={this.state.acronimo} onChange={this.txtacronimo_change} />
+        <Button variant="contained" color="primary" onClick={this.handleOpenDialog}>Salvar</Button>
+        <Button onClick={() => this.setState({ alterando: false })} variant="contained" color="default">Cancelar</Button>
+        <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
+            <DialogTitle>Confirmação</DialogTitle>
+              <DialogContent>
+                    <p>Deseja realmente alterar o instituto:</p>
+                    <p>Id: {this.state.id}</p>
+                    <p>Nome: {this.state.nome}</p>
+                    <p>Acrônimo: {this.state.acronimo}</p>
+              </DialogContent>
+              <DialogActions>
+                <Button variant="contained" color="primary" onClick={() => { this.gravarAlterar(); this.handleCloseDialog(); }}>Salvar</Button>
+                <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
+              </DialogActions>
+        </Dialog>
+      </div>
+    )
+  }
+
   txtnome_change = (event) => {
     this.setState({ nome: event.target.value });
   }
@@ -35,11 +107,17 @@ export default class InstitutoList extends Component {
   handleTermoBuscaChange = (event) => {
     this.setState({ termoBusca: event.target.value });
   }
+  handleOpenDialog = () => {
+    this.setState({ openDialog: true });
+  }
 
-  gravarinstituto = () => {
+  handleCloseDialog = () => {
+    this.setState({ openDialog: false });
+  }
+
+  gravarInstituto = () => {
     const { opcaoBusca, termoBusca } = this.state;
 
-    // Lógica para buscar os institutos com base na opção de busca e no termo
     let url = window.servidor + '/instituto/exibir';
     if (opcaoBusca === 'nome') {
       url += `?nome=${termoBusca}`;
@@ -57,18 +135,18 @@ export default class InstitutoList extends Component {
   }
 
   preencherListInstituto = () => {
-    // Lógica para buscar a lista de institutos do servidor
     fetch(window.servidor + '/instituto/exibir')
       .then(response => response.json())
       .then(data => this.setState({ institutos: data }));
   }
 
   handleAplicarFiltro = () => {
-    this.gravarinstituto();
+    this.gravarInstituto();
   }
+  
 
-  renderItems = () => {
-    const { currentPage, itemsPerPage, institutos, institutoSelecionado } = this.state;
+  renderItems = (institutos) => {
+    const { currentPage, itemsPerPage, institutoSelecionado } = this.state;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = institutos.slice(indexOfFirstItem, indexOfLastItem);
@@ -85,7 +163,12 @@ export default class InstitutoList extends Component {
   };
 
   handleSelect = (instituto) => {
-    this.setState({ institutoSelecionado: instituto === this.state.institutoSelecionado ? null : instituto });
+    this.setState({
+      institutoSelecionado: instituto === this.state.institutoSelecionado ? null : instituto,
+      id: instituto.id,
+      nome: instituto.nome,
+      acronimo: instituto.acronimo
+    });
   };
 
   handleChangeItemsPerPage = (event) => {
@@ -96,7 +179,7 @@ export default class InstitutoList extends Component {
     this.setState({ currentPage: pageNumber });
   };
 
-  render() {
+  renderExibirLista = () => {
     const { currentPage, itemsPerPage, opcaoBusca, termoBusca, institutos } = this.state;
     const totalPages = Math.ceil(institutos.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -110,7 +193,7 @@ export default class InstitutoList extends Component {
           return instituto.acronimo.toLowerCase().startsWith(termoBusca.toLowerCase());
         } else {
           return instituto.nome.toLowerCase().startsWith(termoBusca.toLowerCase()) ||
-                 instituto.acronimo.toLowerCase().startsWith(termoBusca.toLowerCase());
+            instituto.acronimo.toLowerCase().startsWith(termoBusca.toLowerCase());
         }
       });
     }
@@ -120,7 +203,6 @@ export default class InstitutoList extends Component {
         <div className="pl-5 search-container">
           <div className="pl-5 termo">
             Termo:<input type="text" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
-            <button type="button" className="btn btn-secondary" onClick={this.handleAplicarFiltro}><i className="bi bi-search"></i></button>
           </div>
           <div className="box1">Campo:</div>
           <div className="box2">
@@ -130,7 +212,7 @@ export default class InstitutoList extends Component {
               <option value="acronimo">Acrônimo</option>
             </select>
           </div>
-          <button type="button" className="btn btn-primary ml-3">Aplicar</button>
+          <button type="button" className="btn btn-primary ml-3" onClick={this.handleAplicarFiltro}>Aplicar</button>
         </div>
 
         <Table>
@@ -147,8 +229,22 @@ export default class InstitutoList extends Component {
         </Table>
 
         <Button component={Link} to="/instituto/novo" variant="contained" className='mt-3 pl-5' color="primary">Incluir</Button>
-        <Button component={Link} to="/instituto/editar" variant="contained" className='mt-3 pl-5' color="primary">Editar</Button>
-        <Button component={Link} to="/instituto/excluir" variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
+        <Button onClick={() => this.iniciarAlterar(this.state.institutoSelecionado)} variant="contained" className='mt-3 pl-5' color="primary">Editar</Button>
+        <Button onClick={() => {this.handleOpenDialog()} }variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
+        <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
+        <DialogTitle>Confirmação</DialogTitle>
+          <DialogContent>
+            <p>Deseja realmente excluir o instituto:</p>
+            <p>Id: {this.state.id}</p>
+            <p>Nome: {this.state.nome}</p>
+            <p>Acrônimo: {this.state.acronimo}</p>
+          </DialogContent>
+        <DialogActions>
+        <Button variant="contained" color="primary" onClick={() => { this.excluir(this.state.institutoSelecionado); this.handleCloseDialog(); }}>Excluir</Button>
+        <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
+        </DialogActions>
+        </Dialog>
+
 
         <nav aria-label="Page navigation example" className="mt-3">
           <ul className="pagination justify-content-center">
@@ -191,7 +287,18 @@ export default class InstitutoList extends Component {
       </div>
     );
   }
+
+  render() {
+    let pagina = '';
+    if (this.state.alterando) {
+      pagina = this.renderAlterar();
+    } else {
+      pagina = this.renderExibirLista();
+    }
+    return pagina;
+  }
 }
+
 
 
 
