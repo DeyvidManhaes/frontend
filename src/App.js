@@ -7,6 +7,7 @@ import Instituto from './instituto/Instituto';
 import InstitutoForm from './instituto/InstitutoForm';
 import Producao from './producao/Producao';
 import Grafo from './grafo/Grafo';
+import Pesquisador from './pesquisador/Pesquisador';
 
 export default class App extends Component {
   render() {
@@ -17,6 +18,7 @@ export default class App extends Component {
           <Routes> 
             <Route exact path="/" element={<Home />} /> {/* Usando chaves para Home */}
             <Route path="/instituto" element={<Instituto />} />
+            <Route path="/pesquisador" element={<Pesquisador/>} />
             <Route path="/producao" element={<Producao />} />
             <Route path="/grafo" element={<Grafo />} />
             <Route exact path="/instituto/novo" element={<InstitutoForm/>} />

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow } from '@material-ui/core';
 import { Link } from 'react-router-dom';
+import './InstitutoList.css'
 
 export default class InstitutoList extends Component {
   constructor(props) {
@@ -152,7 +153,18 @@ export default class InstitutoList extends Component {
   }
 
   handleAplicarFiltro = () => {
-    this.gravarInstituto();
+    const { opcaoBusca, termoBusca } = this.state;
+  
+    let url = window.servidor + '/instituto/exibir';
+    if (opcaoBusca === 'nome') {
+      url += `?nome=${termoBusca}`;
+    } else if (opcaoBusca === 'acronimo') {
+      url += `?acronimo=${termoBusca}`;
+    }
+  
+    fetch(url)
+      .then(response => response.json())
+      .then(data => this.setState({ institutos: data }));
   }
   
 
@@ -194,7 +206,7 @@ export default class InstitutoList extends Component {
     const { currentPage, itemsPerPage, opcaoBusca, termoBusca, institutos } = this.state;
     const totalPages = Math.ceil(institutos.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
-
+  
     let institutosFiltrados = institutos;
     if (termoBusca.trim() !== '') {
       institutosFiltrados = institutos.filter(instituto => {
@@ -208,24 +220,27 @@ export default class InstitutoList extends Component {
         }
       });
     }
-
+  
     return (
       <div>
-        <div className="pl-5 search-container">
-          <div className="pl-5 termo">
-            Termo:<input type="text" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+        <div className="search-container">
+          <div className="termo">
+            <label htmlFor="termo">Termo:</label>
+            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
           </div>
-          <div className="box1">Campo:</div>
+          <div className="box1">
+            <label htmlFor="opcaoBusca">Campo:</label>
+          </div>
           <div className="box2">
-            <select value={opcaoBusca} onChange={this.handleOpcaoBuscaChange} aria-label="Default select example">
+            <select id="opcaoBusca" value={opcaoBusca} onChange={this.handleOpcaoBuscaChange} aria-label="Default select example">
               <option value="todos">Todos</option>
               <option value="nome">Nome</option>
               <option value="acronimo">Acrônimo</option>
             </select>
           </div>
-          <button type="button" className="btn btn-primary ml-3" onClick={this.handleAplicarFiltro}>Aplicar</button>
+          <button type="button" className="btn btn-primary search-box" onClick={this.handleAplicarFiltro}>Aplicar</button>
         </div>
-
+  
         <Table>
           <TableHead>
             <TableRow>
@@ -238,25 +253,24 @@ export default class InstitutoList extends Component {
             {this.renderItems(institutosFiltrados)}
           </TableBody>
         </Table>
-
+  
         <Button component={Link} to="/instituto/novo" variant="contained" className='mt-3 pl-5' color="primary">Incluir</Button>
         <Button onClick={() => this.iniciarAlterar(this.state.institutoSelecionado)} variant="contained" className='mt-3 pl-5' color="primary">Editar</Button>
         <Button onClick={() => {this.handleOpenDialog()} }variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
         <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
-        <DialogTitle>Confirmação</DialogTitle>
+          <DialogTitle>Confirmação</DialogTitle>
           <DialogContent>
             <p>Deseja realmente excluir o instituto:</p>
             <p>Id: {this.state.id}</p>
             <p>Nome: {this.state.nome}</p>
             <p>Acrônimo: {this.state.acronimo}</p>
           </DialogContent>
-        <DialogActions>
-        <Button variant="contained" color="primary" onClick={() => { this.excluir(this.state.institutoSelecionado); this.handleCloseDialog(); }}>Excluir</Button>
-        <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
-        </DialogActions>
+          <DialogActions>
+            <Button variant="contained" color="primary" onClick={() => { this.excluir(this.state.institutoSelecionado); this.handleCloseDialog(); }}>Excluir</Button>
+            <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
+          </DialogActions>
         </Dialog>
-
-
+  
         <nav aria-label="Page navigation example" className="mt-3">
           <ul className="pagination justify-content-center">
             <li className="page-item">
@@ -286,7 +300,7 @@ export default class InstitutoList extends Component {
             </li>
           </ul>
         </nav>
-
+  
         <div className="mt-3 ml-auto mr-5">
           <select value={itemsPerPage} onChange={this.handleChangeItemsPerPage}>
             <option value="5">5 por página</option>
@@ -298,6 +312,7 @@ export default class InstitutoList extends Component {
       </div>
     );
   }
+  
 
   render() {
     let pagina = '';
