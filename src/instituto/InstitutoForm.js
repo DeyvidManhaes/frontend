@@ -46,7 +46,7 @@ export default class InstitutoForm extends Component {
     fetch(url, requestOptions)
       .then(response => {
         console.log('Gravado Instituto: ' + this.state.nome);
-        this.InstitutoList.preencherListInstituto();
+        this.InstitutoList.preencherListInstituto()
         if (response.ok) {
         
       } else {
