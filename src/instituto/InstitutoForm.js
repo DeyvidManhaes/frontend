@@ -46,10 +46,20 @@ export default class InstitutoForm extends Component {
     fetch(url, requestOptions)
       .then(response => {
         console.log('Gravado Instituto: ' + this.state.nome);
+        if (response.ok) {
+        
+      } else {
+          // Operação falhou
+          alert("Não foi possível realizar a operação por nome ou acrônimo já existente. Erro: "  + response.statusText);
+      }
         // Redireciona para a página de lista de institutos após o salvamento
         this.props.history.push("/instituto");
       })
-      .catch(erro => console.log(erro));
+      .catch(error => {
+        // Erro na requisição
+        console.log(error);
+    });
+      
   }
 
   render() {

@@ -45,8 +45,19 @@ export default class InstitutoList extends Component {
         console.log('Instituto alterado: ' + this.state.nome);
         this.setState({ alterando: false }); // Definindo alterando como falso após a alteração
         this.preencherListInstituto(); // Atualizando a lista de institutos após a alteração
+        if (response.ok) {
+          // Operação bem-sucedida
+          
+      } else {
+          // Operação falhou
+          alert("Não foi possível realizar a operação por nome ou acrônimo já existente. Erro: " + response.statusText);
+      }
+  
       })
-      .catch(error => console.log(error));
+      .catch(error => {
+        console.log(error);
+    });
+      
   }
   excluir = (instituto) => {
     const requestOptions = {
