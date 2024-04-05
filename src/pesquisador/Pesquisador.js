@@ -9,10 +9,12 @@ export default class PesquisadorList extends Component {
       currentPage: 1,
       itemsPerPage: 5,
       pesquisadores: [],
+      institutos: [],
       pesquisadorSelecionado: null,
       opcaoBusca: 'todos', // Opções: 'todos', 'nome', 'email'
       termoBusca: '',
       openDialog: false,
+      openDialoge: false,
       pesquisadorNaoEncontrado: false,
     };
   }
@@ -67,23 +69,30 @@ export default class PesquisadorList extends Component {
   handleCloseDialog = () => {
     this.setState({ openDialog: false });
   }
-
-  excluirPesquisador = () => {
-    const { pesquisadorSelecionado } = this.state;
-
-    fetch(`api/pesquisadores/${pesquisadorSelecionado.id}`, {
-      method: 'DELETE',
-    })
-    .then(response => {
-      if (response.ok) {
-        console.log(`Pesquisador ${pesquisadorSelecionado.nome} excluído com sucesso.`);
-        this.preencherListPesquisador(); // Atualiza a lista após a exclusão
-      } else {
-        console.error('Falha ao excluir o pesquisador.');
-      }
-    })
-    .catch(error => console.error('Erro ao excluir o pesquisador:', error));
+  handleOpenDialog1 = (pesquisador) => {
+    this.setState({ openDialoge: true, pesquisadorSelecionado: pesquisador });
   }
+
+  handleCloseDialog1 = () => {
+    this.setState({ openDialoge: false });
+  }
+
+  excluir = (pesquisador) => {
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    };
+  
+    const url = window.servidor + '/pesquisador/excluir/' + pesquisador.id;
+    fetch(url, requestOptions)
+      .then(response => {
+        console.log('Pesquisador Excluído: ' + pesquisador.nome);
+        this.preencherListInstituto(); // Atualizando a lista de institutos após a exclusão
+      })
+      .catch(error => console.log(error));
+  };
 
   handleChangeItemsPerPage = (event) => {
     this.setState({ itemsPerPage: parseInt(event.target.value), currentPage: 1 });
@@ -94,7 +103,8 @@ export default class PesquisadorList extends Component {
   };
 
   render() {
-    const { pesquisadores, currentPage, itemsPerPage, openDialog, pesquisadorSelecionado, pesquisadorNaoEncontrado } = this.state;
+
+    const { pesquisadores, currentPage, itemsPerPage, opcaoBusca, termoBusca, institutos, openDialog, pesquisadorSelecionado, pesquisadorNaoEncontrado } = this.state;
     const totalPages = Math.ceil(pesquisadores.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
@@ -113,10 +123,29 @@ export default class PesquisadorList extends Component {
           </TableCell>
         </TableRow>
       ));
-    };
+    };      
 
     return (
       <div>
+        <h1 className='mt-5 p-2'>CRUD de Pesquisador</h1>
+        <div className="search-container mt-5" >
+          <div className="termo">
+            <label htmlFor="termo">Termo:</label>
+            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+          </div>
+          <div className="box1">
+            <label htmlFor="opcaoBusca">Campo:</label>
+          </div>
+          <div className="box2">
+            <select id="opcaoBusca" value={opcaoBusca} onChange={this.handleOpcaoBuscaChange} aria-label="Default select example">
+              <option value="todos">Todos</option>
+              <option value="nome">Nome</option>
+              <option value="acronimo">Acrônimo</option>
+            </select>
+          </div>
+          <button type="button" className="btn btn-primary search-box" onClick={this.handleAplicarFiltro}>Aplicar</button>
+        </div>
+
         <Table>
           <TableHead>
             <TableRow>
@@ -130,10 +159,9 @@ export default class PesquisadorList extends Component {
             {renderItems()}
           </TableBody>
         </Table>
-
-        {pesquisadorNaoEncontrado && 
-          <p>Nenhum pesquisador encontrado.</p>
-        }
+        <Button  variant="contained" className='mt-3 pl-5' class="btn btn-primary">Incluir</Button>
+        
+        <Button onClick={() => {this.handleOpenDialog()} } variant="contained" className='mt-3 pl-5' class="btn btn-danger">Excluir</Button>
 
         <Dialog open={openDialog} onClose={this.handleCloseDialog}>
           <DialogTitle>Confirmação</DialogTitle>
@@ -144,7 +172,7 @@ export default class PesquisadorList extends Component {
             <p>Instituto: {pesquisadorSelecionado?.instituto}</p>
           </DialogContent>
           <DialogActions>
-            <Button variant="contained" color="primary" onClick={this.excluirPesquisador}>Excluir</Button>
+            <Button variant="contained" color="primary" onClick={() => { this.excluir(this.state.pesquisadorSelecionadoSelecionado); this.handleCloseDialog(); }}>Excluir</Button>
             <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
           </DialogActions>
         </Dialog>
