@@ -4,7 +4,6 @@ import Home from './home/Home';
 import Rodape from './rodape/Rodape';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Instituto from './instituto/Instituto';
-import InstitutoForm from './instituto/InstitutoForm';
 import Producao from './producao/Producao';
 import Grafo from './grafo/Grafo';
 import Pesquisador from './pesquisador/Pesquisador';
@@ -21,7 +20,6 @@ export default class App extends Component {
             <Route path="/pesquisador" element={<Pesquisador/>} />
             <Route path="/producao" element={<Producao />} />
             <Route path="/grafo" element={<Grafo />} />
-            <Route exact path="/instituto/novo" element={<InstitutoForm/>} />
           </Routes> 
           <Rodape/>
         </div>
