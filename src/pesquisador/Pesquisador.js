@@ -281,6 +281,7 @@ export default class Pesquisador extends Component {
 
         <Button onClick={() => this.iniciarIncluir()} variant="contained" className='mt-3 pl-5' color="primary">Incluir</Button>
         <Button onClick={this.excluirPesquisador} variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
+        
 
         <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
           <DialogTitle>Confirmação</DialogTitle>
