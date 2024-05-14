@@ -10,7 +10,7 @@ export default class Producao extends Component {
       itemsPerPage: 5,
       termoBusca: '',
       trabalhos: [],
-      nomeCitacao: {}, // Alterado para objeto
+      nomesCitacao: [], // Alterado para objeto
     };
   }
 
@@ -29,18 +29,16 @@ export default class Producao extends Component {
   fetchNomes = () => {
     const url = window.servidor + "/nome/exibir";
     fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Dados de nomeCitacao:", data); // Adicionando um log para debug
-            const nomeCitacaoMap = {};
-            data.forEach(nome => {
-                nomeCitacaoMap[nome.id] = nome.nome;
-            });
-            console.log("Mapa de nomeCitacao:", nomeCitacaoMap); // Adicionando um log para debug
-            this.setState({ nomeCitacao: nomeCitacaoMap });
-        })
-        .catch(error => console.error('Erro ao buscar nomes citações:', error));
+    .then(response => response.json())
+    .then(datanome => this.setState({ nomesCitacao: datanome }))
+    .catch(error => console.error('Erro ao buscar nomes:', error));
 }
+getNomeCitacaoById = (trabalhoId) => {
+  const { nomesCitacao } = this.state;
+  const nomeCitacao = nomesCitacao.find(nome => nome.trabalho.id === trabalhoId);
+  return nomeCitacao ? nomeCitacao.nome : '';
+};
+
 
   handleTermoBuscaChange = (event) => {
     this.setState({ termoBusca: event.target.value });
@@ -67,24 +65,19 @@ export default class Producao extends Component {
   };
 
   getDetalhamento = (trabalho) => {
-    const { nomeCitacao } = this.state;
-    
-    // Verifica se 'trabalho' é válido e se 'tipo' está definido
     if (trabalho && trabalho.tipo) {
       const tipoNome = trabalho.tipo.nome;
-      
-      // Verifica se 'tipoNome' está definido
       if (tipoNome === "Livro Publicado") {
-        const nomeCitacaoLivro = nomeCitacao[trabalho.nomeCitacao] || ""; // Obtém o nome de citação do livro ou uma string vazia se não estiver definido
+        const nomeCitacaoLivro = this.getNomeCitacaoById(trabalho.id) ;
         return `${nomeCitacaoLivro}, ${trabalho.titulo}, ${trabalho.editora}, ${trabalho.local}, ${trabalho.ano}`;
       } else if (tipoNome === "Artigo Publicado") {
-        const nomeCitacaoArtigo = nomeCitacao[trabalho.nomeCitacao] || ""; // Obtém o nome de citação do artigo ou uma string vazia se não estiver definido
+        const nomeCitacaoArtigo = this.getNomeCitacaoById(trabalho.id) || "";
         return `${nomeCitacaoArtigo}, ${trabalho.titulo}, ${trabalho.periodico}, ${trabalho.local}, ${trabalho.ano}`;
       }
     }
-  
     return "Detalhes não disponíveis";
   };
+  
 
   handleChangeItemsPerPage = (event) => {
     this.setState({ itemsPerPage: parseInt(event.target.value), currentPage: 1 });
@@ -107,6 +100,16 @@ export default class Producao extends Component {
             <label htmlFor="termo">Termo:</label>
             <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
           </div>
+          <div className="form-group">
+                <label htmlFor="dataInicio">Data Início:</label>
+                <input type="date" id="dataInicio" className="form-control" />
+              </div>
+            </div>
+            <div className="col-md-6">
+              <div className="form-group">
+                <label htmlFor="dataFim">Data Fim:</label>
+                <input type="date" id="dataFim" className="form-control" />
+              </div>
           <button type="button" className="btn btn-primary search-box" onClick={this.handleAplicarFiltro}>Aplicar</button>
         </div>
 
