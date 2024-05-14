@@ -26,27 +26,28 @@ export default class Producao extends Component {
       .then(data => this.setState({ trabalhos: data }))
       .catch(error => console.error('Erro ao buscar trabalhos:', error));
   }
+
   fetchNomes = () => {
     const url = window.servidor + "/nome/exibir";
     fetch(url)
-    .then(response => response.json())
-    .then(datanome => this.setState({ nomesCitacao: datanome }))
-    .catch(error => console.error('Erro ao buscar nomes:', error));
-}
-getNomeCitacaoById = (trabalhoId) => {
-  const { nomesCitacao } = this.state;
-  const nomeCitacao = nomesCitacao.find(nome => nome.trabalho.id === trabalhoId);
-  return nomeCitacao ? nomeCitacao.nome : '';
-};
+      .then(response => response.json())
+      .then(datanome => this.setState({ nomesCitacao: datanome }))
+      .catch(error => console.error('Erro ao buscar nomes:', error));
+  }
 
+  getNomeCitacaoById = (trabalhoId) => {
+    const { nomesCitacao } = this.state;
+    const nomeCitacao = nomesCitacao.find(nome => nome.trabalho.id === trabalhoId);
+    return nomeCitacao ? nomeCitacao.nome : '';
+  };
 
   handleTermoBuscaChange = (event) => {
     this.setState({ termoBusca: event.target.value });
   }
 
   handleAplicarFiltro = () => {
-    const { termoBusca } = this.state;
-    const trabalhosFiltrados = this.state.trabalhos.filter(trabalho => trabalho.nome.includes(termoBusca));
+    const { termoBusca, trabalhos } = this.state;
+    const trabalhosFiltrados = trabalhos.filter(trabalho => trabalho.nome.includes(termoBusca));
     this.setState({ trabalhos: trabalhosFiltrados });
   }
 
@@ -68,7 +69,7 @@ getNomeCitacaoById = (trabalhoId) => {
     if (trabalho && trabalho.tipo) {
       const tipoNome = trabalho.tipo.nome;
       if (tipoNome === "Livro Publicado") {
-        const nomeCitacaoLivro = this.getNomeCitacaoById(trabalho.id) ;
+        const nomeCitacaoLivro = this.getNomeCitacaoById(trabalho.id);
         return `${nomeCitacaoLivro}, ${trabalho.titulo}, ${trabalho.editora}, ${trabalho.local}, ${trabalho.ano}`;
       } else if (tipoNome === "Artigo Publicado") {
         const nomeCitacaoArtigo = this.getNomeCitacaoById(trabalho.id) || "";
@@ -77,7 +78,6 @@ getNomeCitacaoById = (trabalhoId) => {
     }
     return "Detalhes não disponíveis";
   };
-  
 
   handleChangeItemsPerPage = (event) => {
     this.setState({ itemsPerPage: parseInt(event.target.value), currentPage: 1 });
@@ -95,33 +95,41 @@ getNomeCitacaoById = (trabalhoId) => {
     return (
       <div className='p-2 mt-5'>
         <h1>Itens de Produção</h1>
-        <div className="search-container">
-          <div className="termo">
-            <label htmlFor="termo">Termo:</label>
-            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+        <div className="grid text-center search-container" style={{ '--bs-rows': 2, '--bs-columns': 3 }}>
+          <div className="form-group">
+            <label htmlFor="dataInicio">Data Início:</label>
+            <input type="date" id="dataInicio" className="form-control" />
           </div>
           <div className="form-group">
-                <label htmlFor="dataInicio">Data Início:</label>
-                <input type="date" id="dataInicio" className="form-control" />
-              </div>
-            </div>
-            <div className="col-md-6">
-              <div className="form-group">
-                <label htmlFor="dataFim">Data Fim:</label>
-                <input type="date" id="dataFim" className="form-control" />
-              </div>
-          <button type="button" className="btn btn-primary search-box" onClick={this.handleAplicarFiltro}>Aplicar</button>
+            <label htmlFor="dataFim">Data Fim:</label>
+            <input type="date" id="dataFim" className="form-control" />
+          </div>
+          <div>
+            <button type="button" className="btn btn-primary search-box" onClick={this.handleAplicarFiltro}>Aplicar</button>
+          </div>
+          <div className='termo' style={{ gridRow: 2 }}>
+            <label htmlFor="termo">Instituto:</label>
+            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+          </div>
+          <div className='termo' style={{ gridRow: 2 }}>
+            <label htmlFor="termo">Pesquisador:</label>
+            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+          </div>
+          <div className='termo'style={{ gridRow: 2 }}>
+            <label htmlFor="termo">Tipo Prod:</label>
+            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+          </div>
         </div>
 
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Tipo</TableCell>
+              <TableCell className='bg-gray p-4 col-md-2 ml-auto'>Tipo</TableCell>
               <TableCell>Detalhamento</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {this.renderItems(trabalhos)}
+            {this.renderItems()}
           </TableBody>
         </Table>
 
@@ -167,3 +175,4 @@ getNomeCitacaoById = (trabalhoId) => {
     );
   }
 }
+
