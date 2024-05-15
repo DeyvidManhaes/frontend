@@ -8,24 +8,54 @@ export default class Producao extends Component {
     this.state = {
       currentPage: 1,
       itemsPerPage: 5,
-      termoBusca: '',
+      dataInicio: '',
+      dataFim: '',
+      buscainstituto: '',
+      buscapesquisador: '',
+      buscatipoproducao: '',
       trabalhos: [],
-      nomesCitacao: [], // Alterado para objeto
+      filteredTrabalhos: [],
+      institutos: [],
+      pesquisadores: [],
+      nomesCitacao: [],
     };
   }
 
   componentDidMount() {
     this.fetchTrabalhos();
     this.fetchNomes();
+    this.fetchPesquisadores();
   }
 
   fetchTrabalhos = () => {
     const url = window.servidor + "/trabalho/exibir";
     fetch(url)
       .then(response => response.json())
-      .then(data => this.setState({ trabalhos: data }))
+      .then(data => this.setState({ trabalhos: data, filteredTrabalhos: data }))
       .catch(error => console.error('Erro ao buscar trabalhos:', error));
   }
+
+  fetchPesquisadores = () => {
+    const url = window.servidor + "/pesquisador/exibir";
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        // Extrair todos os institutos dos pesquisadores
+        const institutos = data.reduce((acc, pesquisador) => {
+          if (pesquisador.instituto && pesquisador.instituto.nome) {
+            acc.push(pesquisador.instituto.nome);
+          }
+          return acc;
+        }, []);
+        // Remover institutos duplicados
+        const institutosUnicos = Array.from(new Set(institutos));
+        // Atualizar o estado com os institutos
+        this.setState({ pesquisadores: data, institutos: institutosUnicos });
+      })
+      .catch(error => console.error('Erro ao buscar pesquisadores:', error));
+  }
+  
+  
 
   fetchNomes = () => {
     const url = window.servidor + "/nome/exibir";
@@ -41,25 +71,44 @@ export default class Producao extends Component {
     return nomeCitacao ? nomeCitacao.nome : '';
   };
 
-  handleTermoBuscaChange = (event) => {
-    this.setState({ termoBusca: event.target.value });
-  }
+  handleDataInicioChange = (event) => {
+    this.setState({ dataInicio: event.target.value });
+  };
+
+  handleDataFimChange = (event) => {
+    this.setState({ dataFim: event.target.value });
+  };
+
+  handleFilterChange = (event) => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
 
   handleAplicarFiltro = () => {
-    const { termoBusca, trabalhos } = this.state;
-    const trabalhosFiltrados = trabalhos.filter(trabalho => trabalho.nome.includes(termoBusca));
-    this.setState({ trabalhos: trabalhosFiltrados });
+    const { buscainstituto, buscapesquisador, buscatipoproducao, dataInicio, dataFim, trabalhos, pesquisadores } = this.state;
+
+    const trabalhosFiltrados = trabalhos.filter(trabalho => {
+      const pesquisador = pesquisadores.find(pesq => pesq.id === trabalho.pesquisador.id);
+      const byInstituto = buscainstituto ? pesquisador && pesquisador.instituto && pesquisador.instituto.nome === buscainstituto : true;
+      const byPesquisador = buscapesquisador ? trabalho.pesquisador && trabalho.pesquisador.id === parseInt(buscapesquisador) : true;
+      const byTipo = buscatipoproducao ? trabalho.tipo && trabalho.tipo.nome === buscatipoproducao : true;
+      const byAnoInicio = dataInicio ? trabalho.ano >= dataInicio : true;
+      const byAnoFim = dataFim ? trabalho.ano <= dataFim : true;
+
+      return byInstituto && byPesquisador && byTipo && byAnoInicio && byAnoFim;
+    });
+
+    this.setState({ filteredTrabalhos: trabalhosFiltrados, currentPage: 1 });
   }
 
   renderItems = () => {
-    const { currentPage, itemsPerPage, trabalhos } = this.state;
+    const { currentPage, itemsPerPage, filteredTrabalhos } = this.state;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = trabalhos.slice(indexOfFirstItem, indexOfLastItem);
-  
+    const currentItems = filteredTrabalhos.slice(indexOfFirstItem, indexOfLastItem);
+
     return currentItems.map((trabalho, index) => (
       <TableRow key={index}>
-        <TableCell>{trabalho.tipo.nome}</TableCell>
+        <TableCell>{trabalho.tipo ? trabalho.tipo.nome : 'Tipo não disponível'}</TableCell>
         <TableCell>{this.getDetalhamento(trabalho)}</TableCell>
       </TableRow>
     ));
@@ -88,51 +137,83 @@ export default class Producao extends Component {
   };
 
   render() {
-    const { currentPage, itemsPerPage, termoBusca, trabalhos } = this.state;
-    const totalPages = Math.ceil(trabalhos.length / itemsPerPage);
+    const { currentPage, itemsPerPage, pesquisadores, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, filteredTrabalhos } = this.state;
+    const totalPages = Math.ceil(filteredTrabalhos.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
+    const anosTrabalhos = [...new Set(filteredTrabalhos.map(trabalho => trabalho.ano))];
+    const anosFiltradosInicio = anosTrabalhos.filter(ano => !dataFim || ano <= dataFim).sort((a, b) => b - a); // Ordena os anos em ordem decrescente;
+    const anosFiltradosFim = anosTrabalhos.filter(ano => !dataInicio || ano >= dataInicio).sort((a, b) => b - a); // Ordena os anos em ordem decrescente;
+
     return (
-      <div className='p-2 mt-5'>
-        <h1>Itens de Produção</h1>
-        <div className="grid text-center search-container" style={{ '--bs-rows': 2, '--bs-columns': 3 }}>
-          <div className="form-group">
-            <label htmlFor="dataInicio">Data Início:</label>
-            <input type="date" id="dataInicio" className="form-control" />
+      <div className='p-1 mt-5'>
+      <h1>Itens de Produção</h1>
+      <div className="search row mt-3 justify-content-between">
+        <div className="row">
+          <div className="col-md-3">
+            <label><h5>Ano Início:</h5></label>
+            <select className="form-control" value={dataInicio} onChange={this.handleDataInicioChange}>
+              <option value="">Todos</option>
+              {anosFiltradosInicio.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
-          <div className="form-group">
-            <label htmlFor="dataFim">Data Fim:</label>
-            <input type="date" id="dataFim" className="form-control" />
+          <div className="col-md-3">
+            <label><h5>Ano Fim:</h5></label>
+            <select className="form-control" value={dataFim} onChange={this.handleDataFimChange}>
+              <option value="">Todos</option>
+              {anosFiltradosFim.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
-          <div>
-            <button type="button" className="btn btn-primary search-box" onClick={this.handleAplicarFiltro}>Aplicar</button>
-          </div>
-          <div className='termo' style={{ gridRow: 2 }}>
-            <label htmlFor="termo">Instituto:</label>
-            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
-          </div>
-          <div className='termo' style={{ gridRow: 2 }}>
-            <label htmlFor="termo">Pesquisador:</label>
-            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
-          </div>
-          <div className='termo'style={{ gridRow: 2 }}>
-            <label htmlFor="termo">Tipo Prod:</label>
-            <input type="text" id="termo" placeholder="Digite aqui" value={termoBusca} onChange={this.handleTermoBuscaChange} />
+          <div className="col-md-2">
+            <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
           </div>
         </div>
-
-        <Table>
+        <div className='row mt-1'>
+          <div className="col-md-3">
+            <label><h5>Instituto:</h5></label>
+            <select name="buscainstituto" value={buscainstituto} onChange={this.handleFilterChange} className="form-control">
+              <option value="">Todos</option>
+              {this.state.institutos.map((instituto, index) => (
+                <option key={index} value={instituto}>{instituto}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-3">
+            <label><h5>Pesquisador:</h5></label>
+            <select name="buscapesquisador" value={buscapesquisador} onChange={this.handleFilterChange} className="form-control">
+              <option value="">Todos</option>
+              {pesquisadores.map(pesquisador => (
+                <option key={pesquisador.id} value={pesquisador.id}>{pesquisador.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-3">
+            <label><h5>Tipo de Produção:</h5></label>
+            <select name="buscatipoproducao" value={buscatipoproducao} onChange={this.handleFilterChange} className="form-control">
+              <option value="">Todos</option>
+              {["Artigo Publicado", "Livro Publicado"].map(tipo => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    
+        <Table className='mt-5 '>
           <TableHead>
-            <TableRow>
-              <TableCell className='bg-gray p-4 col-md-2 ml-auto'>Tipo</TableCell>
-              <TableCell>Detalhamento</TableCell>
+            <TableRow className="search-container mt-5 p-5">
+              <TableCell >Tipo</TableCell>
+              <TableCell className="">Detalhamento</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody >
             {this.renderItems()}
           </TableBody>
         </Table>
-
         <nav aria-label="Page navigation example" className="mt-3">
           <ul className="pagination justify-content-center">
             <li className="page-item">
@@ -162,7 +243,6 @@ export default class Producao extends Component {
             </li>
           </ul>
         </nav>
-
         <div className="mt-3 ml-auto mr-5">
           <select value={itemsPerPage} onChange={this.handleChangeItemsPerPage}>
             <option value="5">5 por página</option>
@@ -175,4 +255,3 @@ export default class Producao extends Component {
     );
   }
 }
-

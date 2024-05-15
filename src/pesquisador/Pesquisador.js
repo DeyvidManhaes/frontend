@@ -68,7 +68,7 @@ export default class Pesquisador extends Component {
   handleTermoBuscaInstitutoChange = (event) => {
     const termo = event.target.value.toLowerCase();
     const filteredInstitutos = this.state.institutos.filter(instituto =>
-      instituto.nome.toLowerCase().includes(termo)
+      instituto.acronimo.toLowerCase().includes(termo)
     );
     this.setState({ termoBuscaInstituto: event.target.value, filteredInstitutos });
   };
@@ -100,11 +100,28 @@ export default class Pesquisador extends Component {
   }
 
   renderPesquisadores = () => {
-    const { currentPage, itemsPerPage, pesquisadores, pesquisadorSelecionado } = this.state;
+    const { currentPage, itemsPerPage, pesquisadores, pesquisadorSelecionado, filtroSelecionado, termoBuscaFiltrado } = this.state;
+    let pesquisadoresFiltrados = pesquisadores;
+  
+    // Se um filtro foi aplicado, filtrar a lista de pesquisadores com base nos critérios de busca
+    if (filtroSelecionado && termoBuscaFiltrado) {
+      pesquisadoresFiltrados = pesquisadores.filter(pesquisador => {
+        if (filtroSelecionado === 'nome') {
+          return pesquisador.nome.toLowerCase().includes(termoBuscaFiltrado.toLowerCase());
+        } else if (filtroSelecionado === 'email') {
+          return pesquisador.email.toLowerCase().includes(termoBuscaFiltrado.toLowerCase());
+        } else if (filtroSelecionado === 'instituto') {
+          return pesquisador.instituto.acronimo.toLowerCase().includes(termoBuscaFiltrado.toLowerCase());
+        } else {
+          return true; // Se o filtro selecionado for "todos", não aplicar nenhum filtro
+        }
+      });
+    }
+  
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = pesquisadores.slice(indexOfFirstItem, indexOfLastItem);
-
+    const currentItems = pesquisadoresFiltrados.slice(indexOfFirstItem, indexOfLastItem);
+  
     return currentItems.map((pesquisador, index) => (
       <TableRow key={index} className={pesquisador === pesquisadorSelecionado ? 'selected' : ''} onClick={() => this.handleSelect(pesquisador)}>
         <TableCell>{pesquisador.nome}</TableCell>
@@ -144,20 +161,9 @@ export default class Pesquisador extends Component {
   }
 
   handleAplicarFiltro = () => {
+    // Armazenar o filtro selecionado e o termo de busca no estado
     const { opcaoBusca, termoBusca } = this.state;
-
-    let url = window.servidor + '/pesquisador/exibir';
-    if (opcaoBusca === 'nome') {
-      url += `?nome=${termoBusca}`;
-    } else if (opcaoBusca === 'instituto') {
-      url += `?instituto=${termoBusca}`;
-    } else if (opcaoBusca === 'email') {
-      url += `?email=${termoBusca}`;
-    }
-
-    fetch(url)
-      .then(response => response.json())
-      .then(data => this.setState({ pesquisadores: data }));
+    this.setState({ filtroSelecionado: opcaoBusca, termoBuscaFiltrado: termoBusca });
   }
 
   excluirPesquisador = () => {

@@ -35,4 +35,11 @@ margin-left: 1px;
 .search-box {
 margin-right: 10px; 
 }
+.bold {
+    font-weight: bold;
+  }
+  
+  .large-text {
+    font-size: 18px;
+  }
 
