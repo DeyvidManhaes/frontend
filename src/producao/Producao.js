@@ -13,6 +13,7 @@ export default class Producao extends Component {
       buscainstituto: '',
       buscapesquisador: '',
       buscatipoproducao: '',
+      contador: 0,
       trabalhos: [],
       filteredTrabalhos: [],
       institutos: [],
@@ -31,7 +32,7 @@ export default class Producao extends Component {
     const url = window.servidor + "/trabalho/exibir";
     fetch(url)
       .then(response => response.json())
-      .then(data => this.setState({ trabalhos: data, filteredTrabalhos: data }))
+      .then(data => this.setState({ trabalhos: data, filteredTrabalhos: data, contador: data.length }))
       .catch(error => console.error('Erro ao buscar trabalhos:', error));
   }
 
@@ -40,22 +41,17 @@ export default class Producao extends Component {
     fetch(url)
       .then(response => response.json())
       .then(data => {
-        // Extrair todos os institutos dos pesquisadores
         const institutos = data.reduce((acc, pesquisador) => {
           if (pesquisador.instituto && pesquisador.instituto.nome) {
             acc.push(pesquisador.instituto.nome);
           }
           return acc;
         }, []);
-        // Remover institutos duplicados
         const institutosUnicos = Array.from(new Set(institutos));
-        // Atualizar o estado com os institutos
         this.setState({ pesquisadores: data, institutos: institutosUnicos });
       })
       .catch(error => console.error('Erro ao buscar pesquisadores:', error));
   }
-  
-  
 
   fetchNomes = () => {
     const url = window.servidor + "/nome/exibir";
@@ -97,7 +93,7 @@ export default class Producao extends Component {
       return byInstituto && byPesquisador && byTipo && byAnoInicio && byAnoFim;
     });
 
-    this.setState({ filteredTrabalhos: trabalhosFiltrados, currentPage: 1 });
+    this.setState({ filteredTrabalhos: trabalhosFiltrados, currentPage: 1, contador: trabalhosFiltrados.length });
   }
 
   renderItems = () => {
@@ -137,80 +133,83 @@ export default class Producao extends Component {
   };
 
   render() {
-    const { currentPage, itemsPerPage, pesquisadores, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, filteredTrabalhos } = this.state;
+    const { currentPage, itemsPerPage, pesquisadores, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, filteredTrabalhos, contador } = this.state;
     const totalPages = Math.ceil(filteredTrabalhos.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
     const anosTrabalhos = [...new Set(filteredTrabalhos.map(trabalho => trabalho.ano))];
-    const anosFiltradosInicio = anosTrabalhos.filter(ano => !dataFim || ano <= dataFim).sort((a, b) => b - a); // Ordena os anos em ordem decrescente;
-    const anosFiltradosFim = anosTrabalhos.filter(ano => !dataInicio || ano >= dataInicio).sort((a, b) => b - a); // Ordena os anos em ordem decrescente;
+    const anosFiltradosInicio = anosTrabalhos.filter(ano => !dataFim || ano <= dataFim).sort((a, b) => b - a);
+    const anosFiltradosFim = anosTrabalhos.filter(ano => !dataInicio || ano >= dataInicio).sort((a, b) => b - a);
 
     return (
       <div className='p-1 mt-5'>
-      <h1>Itens de Produção</h1>
-      <div className="search row mt-3 justify-content-between">
-        <div className="row">
-          <div className="col-md-3">
-            <label><h5>Ano Início:</h5></label>
-            <select className="form-control" value={dataInicio} onChange={this.handleDataInicioChange}>
-              <option value="">Todos</option>
-              {anosFiltradosInicio.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
+        <h1>Itens de Produção</h1>
+        <div className="search row mt-3 justify-content-between">
+          <div className="row">
+            <div className="col-md-3">
+              <label><h5>Ano Início:</h5></label>
+              <select className="form-control" value={dataInicio} onChange={this.handleDataInicioChange}>
+                <option value="">Todos</option>
+                {anosFiltradosInicio.map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label><h5>Ano Fim:</h5></label>
+              <select className="form-control" value={dataFim} onChange={this.handleDataFimChange}>
+                <option value="">Todos</option>
+                {anosFiltradosFim.map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-2">
+              <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
+            </div>
           </div>
-          <div className="col-md-3">
-            <label><h5>Ano Fim:</h5></label>
-            <select className="form-control" value={dataFim} onChange={this.handleDataFimChange}>
-              <option value="">Todos</option>
-              {anosFiltradosFim.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-2">
-            <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
+          <div className='row mt-1'>
+            <div className="col-md-3">
+              <label><h5>Instituto:</h5></label>
+              <select name="buscainstituto" value={buscainstituto} onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+                {this.state.institutos.map((instituto, index) => (
+                  <option key={index} value={instituto}>{instituto}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label><h5>Pesquisador:</h5></label>
+              <select name="buscapesquisador" value={buscapesquisador} onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+                {pesquisadores.map(pesquisador => (
+                  <option key={pesquisador.id} value={pesquisador.id}>{pesquisador.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label><h5>Tipo de Produção:</h5></label>
+              <select name="buscatipoproducao" value={buscatipoproducao} onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+                {["Artigo Publicado", "Livro Publicado"].map(tipo => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-        <div className='row mt-1'>
-          <div className="col-md-3">
-            <label><h5>Instituto:</h5></label>
-            <select name="buscainstituto" value={buscainstituto} onChange={this.handleFilterChange} className="form-control">
-              <option value="">Todos</option>
-              {this.state.institutos.map((instituto, index) => (
-                <option key={index} value={instituto}>{instituto}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3">
-            <label><h5>Pesquisador:</h5></label>
-            <select name="buscapesquisador" value={buscapesquisador} onChange={this.handleFilterChange} className="form-control">
-              <option value="">Todos</option>
-              {pesquisadores.map(pesquisador => (
-                <option key={pesquisador.id} value={pesquisador.id}>{pesquisador.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3">
-            <label><h5>Tipo de Produção:</h5></label>
-            <select name="buscatipoproducao" value={buscatipoproducao} onChange={this.handleFilterChange} className="form-control">
-              <option value="">Todos</option>
-              {["Artigo Publicado", "Livro Publicado"].map(tipo => (
-                <option key={tipo} value={tipo}>{tipo}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-    
-        <Table className='mt-5 '>
+        <div className='p-3 col'> 
+          <label className='col-1'><h5>Total de trabalhos:</h5></label>
+          <div class="badge text-bg-primary text-wrap col-1">
+         <h4> {contador}</h4></div></div>
+        <Table className='mt-2'>
           <TableHead>
             <TableRow className="search-container mt-5 p-5">
-              <TableCell >Tipo</TableCell>
-              <TableCell className="">Detalhamento</TableCell>
+              <TableCell>Tipo</TableCell>
+              <TableCell>Detalhamento</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody >
+          <TableBody>
             {this.renderItems()}
           </TableBody>
         </Table>

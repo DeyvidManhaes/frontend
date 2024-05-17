@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Menu from '../menu/Menu';
+import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@material-ui/core';
 import '../home/Home.css'; // Arquivo de estilos para a página Home
 
 export default class Home extends Component {
@@ -18,27 +19,48 @@ export default class Home extends Component {
         </div>
 
         {/* Seção de pesquisa */}
-        <div className="container-fluid">
-          <div className="row">
-            <div className="col-md-6">
-              <div className="form-group">
-                <label htmlFor="dataInicio">Data Início:</label>
-                <input type="date" id="dataInicio" className="form-control" />
-              </div>
-            </div>
-            <div className="col-md-6">
-              <div className="form-group">
-                <label htmlFor="dataFim">Data Fim:</label>
-                <input type="date" id="dataFim" className="form-control" />
-              </div>
-            </div>
+        <div className="search row mt-3 justify-content-between">
+        <div className="row">
+          <div className="col-md-3">
+            <label><h5>Ano Início:</h5></label>
+            <select className="form-control"  onChange={this.handleDataInicioChange}>
+              <option value="">Todos</option>
+             
+            </select>
           </div>
-          <div className="row">
-            <div className="col-md-12">
-              <button className="btn btn-dark">Aplicar</button>
-            </div>
+          <div className="col-md-3">
+            <label><h5>Ano Fim:</h5></label>
+            <select className="form-control" onChange={this.handleDataFimChange}>
+              <option value="">Todos</option>
+              
+            </select>
+          </div>
+          <div className="col-md-2">
+            <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
           </div>
         </div>
+        <div className='row mt-1'>
+          <div className="col-md-3">
+            <label><h5>Instituto:</h5></label>
+            <select name="buscainstituto"  onChange={this.handleFilterChange} className="form-control">
+              <option value="">Todos</option>
+             
+            </select>
+          </div>
+          <div className="col-md-3">
+            <label><h5>Pesquisador:</h5></label>
+            <select name="buscapesquisador" onChange={this.handleFilterChange} className="form-control">
+              <option value="">Todos</option>
+            
+            </select>
+          </div>
+          <div className="col-md-3">
+            <label><h5>Tipo de Produção:</h5></label>
+            <select name="buscatipoproducao"></select>
+      
+          </div>
+        </div>
+      </div>
 
         {/* Container principal com coloração cinza claro */}
         <div className="main-container">
