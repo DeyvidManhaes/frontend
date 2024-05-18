@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import Menu from '../menu/Menu';
-import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@material-ui/core';
+import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
 import '../home/Home.css'; // Arquivo de estilos para a página Home
 
 export default class Home extends Component {

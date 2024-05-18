@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@material-ui/core';
+import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
 import './ProducaoList.css';
 
 export default class Producao extends Component {

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow, Select, MenuItem } from '@material-ui/core';
+import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow, Select, MenuItem } from '@mui/material';
 import './PesquisadorList.css'
 
 export default class Pesquisador extends Component {

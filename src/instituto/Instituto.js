@@ -1,6 +1,6 @@
 // Instituto.js
 import React, { Component } from 'react';
-import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow } from '@material-ui/core';
+import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
 import './InstitutoList.css'
 
 export default class Instituto extends Component {
