@@ -1,0 +1,30 @@
+/* Estilos para o contêiner dos vértices */
+.vertex-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    /* Define a altura para ocupar a tela inteira */
+}
+
+/* Estilos para os vértices */
+.vertex {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: #ffffff;
+    /* Cor de fundo branca */
+    border: 2px solid #000000;
+    /* Borda preta */
+    border-radius: 50%;
+    /* Borda arredondada para criar círculos */
+}
+
+/* Estilos específicos para os vértices dos institutos */
+.vertex.instituto {
+    /* Adicione estilos específicos para os vértices dos institutos, se necessário */
+}
+
+/* Estilos específicos para os vértices dos pesquisadores */
+.vertex.pesquisador {
+    /* Adicione estilos específicos para os vértices dos pesquisadores, se necessário */
+}

@@ -12,8 +12,8 @@ export default class App extends Component {
   render() {
     return (
       <Router>
-        <div>
-          <Menu />
+        <div><Menu /></div>
+        <div className='p-1'>
           <Routes> 
             <Route exact path="/" element={<Home />} /> {/* Usando chaves para Home */}
             <Route path="/instituto" element={<Instituto />} />
@@ -21,8 +21,11 @@ export default class App extends Component {
             <Route path="/producao" element={<Producao />} />
             <Route path="/grafo" element={<Grafo />} />
           </Routes> 
-          <Rodape/>
+          
         </div>
+        <div className='p-2 mt-4'>
+            <Rodape/>
+         </div>
       </Router>
     )
   }

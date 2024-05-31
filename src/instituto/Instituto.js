@@ -241,10 +241,25 @@ export default class Instituto extends Component {
   }
 
   preencherListInstituto = () => {
-    fetch(window.servidor + '/instituto/exibir')
-      .then(response => response.json())
-      .then(data => this.setState({ institutos: data }));
-  }
+  const url = window.servidor + '/instituto/exibir';
+  console.log(`Fetching data from: ${url}`);
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Data fetched:', data);
+      this.setState({ institutos: data });
+    })
+    .catch(error => {
+      console.error('Failed to fetch:', error);
+    });
+}
+
 
   handleAplicarFiltro = () => {
     const { opcaoBusca, termoBusca } = this.state;

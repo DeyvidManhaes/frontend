@@ -1,10 +1,50 @@
 import React, { Component } from 'react';
 import Menu from '../menu/Menu';
-import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
+import { Button } from '@mui/material';
 import '../home/Home.css'; // Arquivo de estilos para a página Home
+import ZingChart from 'zingchart-react'; // Importe o componente ZingChart
+import 'zingchart/es6'; // Importe o módulo principal do ZingChart
 
 export default class Home extends Component {
+  handleChartClick = () => {
+    window.location.href = '/producao';
+  };
+
   render() {
+    const chartConfig = {
+      type: 'ring',
+      legend: {
+        align: 'center',
+        borderWidth: '0px',
+        item: {
+          cursor: 'pointer',
+          fontSize: '15px',
+          offsetX: '-5px',
+        },
+        layout: 'vertical',
+        marker: {
+          type: 'circle',
+          cursor: 'pointer',
+          size: '10px',
+        },
+        toggleAction: 'start', // remove plot so it re-calculates percentage
+        verticalAlign: 'middle',
+      },
+      plot: {
+        tooltip: {
+          visible: false,
+        },
+        detached: false, // turn off click on slices
+        slice: 150, // set hole size in middle of chart
+      },
+      series: [
+        { values: [34], backgroundColor: '#FE7A5D' },
+        { values: [40], backgroundColor: '#69A8F8' },
+        { values: [50], backgroundColor: '#54DBB9' },
+        { values: [20], backgroundColor: '#FEDA60' },
+      ],
+    };
+
     return (
       <div>
         {/* Importando e apresentando o componente Menu */}
@@ -20,47 +60,42 @@ export default class Home extends Component {
 
         {/* Seção de pesquisa */}
         <div className="search row mt-3 justify-content-between">
-        <div className="row">
-          <div className="col-md-3">
-            <label><h5>Ano Início:</h5></label>
-            <select className="form-control"  onChange={this.handleDataInicioChange}>
-              <option value="">Todos</option>
-             
-            </select>
+          <div className="row">
+            <div className="col-md-3">
+              <label><h5>Ano Início:</h5></label>
+              <select className="form-control" onChange={this.handleDataInicioChange}>
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label><h5>Ano Fim:</h5></label>
+              <select className="form-control" onChange={this.handleDataFimChange}>
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div className="col-md-2">
+              <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
+            </div>
           </div>
-          <div className="col-md-3">
-            <label><h5>Ano Fim:</h5></label>
-            <select className="form-control" onChange={this.handleDataFimChange}>
-              <option value="">Todos</option>
-              
-            </select>
-          </div>
-          <div className="col-md-2">
-            <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
-          </div>
-        </div>
-        <div className='row mt-1'>
-          <div className="col-md-3">
-            <label><h5>Instituto:</h5></label>
-            <select name="buscainstituto"  onChange={this.handleFilterChange} className="form-control">
-              <option value="">Todos</option>
-             
-            </select>
-          </div>
-          <div className="col-md-3">
-            <label><h5>Pesquisador:</h5></label>
-            <select name="buscapesquisador" onChange={this.handleFilterChange} className="form-control">
-              <option value="">Todos</option>
-            
-            </select>
-          </div>
-          <div className="col-md-3">
-            <label><h5>Tipo de Produção:</h5></label>
-            <select name="buscatipoproducao"></select>
-      
+          <div className='row mt-1'>
+            <div className="col-md-3">
+              <label><h5>Instituto:</h5></label>
+              <select name="buscainstituto" onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label><h5>Pesquisador:</h5></label>
+              <select name="buscapesquisador" onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label><h5>Tipo de Produção:</h5></label>
+              <select name="buscatipoproducao" className="form-control"></select>
+            </div>
           </div>
         </div>
-      </div>
 
         {/* Container principal com coloração cinza claro */}
         <div className="main-container">
@@ -80,23 +115,29 @@ export default class Home extends Component {
         <div className="shortcut-container">
           {/* Atalho para a página de gráficos */}
           <div className="shortcut">
-            <button>Gráfico de Produção</button>
+            <Button onClick={this.handleChartClick} style={{ padding: '10px', position: 'relative' }}>
+              Gráfico de Produção
+              <div id="myChart" className="chart--container" style={{ width: '100px', height: '100px', position: 'absolute', top: '20px', right: '10px' }}>
+                <ZingChart data={chartConfig} height="100px" width="100px" />
+              </div>
+            </Button>
           </div>
           {/* Atalho para a página de institutos */}
           <div className="shortcut">
-            <button>Institutos</button>
+            <Button>Institutos</Button>
           </div>
           {/* Atalho para a página de pesquisadores */}
           <div className="shortcut">
-            <button>Pesquisadores</button>
+            <Button>Pesquisadores</Button>
           </div>
           {/* Atalho para a página do grafo */}
           <div className="shortcut">
-            <button>Grafo</button>
+            <Button>Grafo</Button>
           </div>
         </div>
       </div>
     );
   }
 }
+
 
