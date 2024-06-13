@@ -35,4 +35,7 @@ margin-left: 1px;
 .search-box {
 margin-right: 10px; 
 }
+.selected {
+    background-color: rgba(0, 0, 0, 0.08);
+}
 

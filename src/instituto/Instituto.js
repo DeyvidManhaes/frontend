@@ -1,7 +1,7 @@
 // Instituto.js
 import React, { Component } from 'react';
 import { TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
-import './InstitutoList.css'
+import './InstitutoList.css';
 
 export default class Instituto extends Component {
   constructor(props) {
@@ -13,7 +13,7 @@ export default class Instituto extends Component {
       acronimo: "",
       institutos: [],
       institutoSelecionado: null,
-      opcaoBusca: 'todos', // Opções: 'todos', 'nome', 'acronimo'
+      opcaoBusca: 'todos',
       termoBusca: '',
       alterando: false,
       openDialog: false,
@@ -22,16 +22,13 @@ export default class Instituto extends Component {
     };
   }
 
-    iniciarAlterar = (instituto) => {
-      if (instituto) {
-        this.setState({ alterando: true, nome: instituto.nome, id: instituto.id, acronimo: instituto.acronimo });
-      } else {
-        alert("Por favor, selecione um instituto para editar.");
-      }
-    };
-    
-  
-
+  iniciarAlterar = (instituto) => {
+    if (instituto) {
+      this.setState({ alterando: true, nome: instituto.nome, id: instituto.id, acronimo: instituto.acronimo });
+    } else {
+      alert("Por favor, selecione um instituto para editar.");
+    }
+  };
 
   salvarInstituto = () => {
     const dados = {
@@ -49,41 +46,34 @@ export default class Instituto extends Component {
 
     const url = window.servidor + '/instituto/incluir';
     fetch(url, requestOptions)
-    .then(response => {
-      console.log('Instituto Gravado: ' + this.state.nome);
-      this.setState({ incluindo: false }); // Definindo alterando como falso após a alteração
-      this.preencherListInstituto(); // Atualizando a lista de institutos após a inclusão
-      if (response.ok) {
-        // Operação bem-sucedida
-        
-    } else {
-        // Operação falhou
-        alert("Não foi possível realizar a operação por nome ou acrônimo já existente. Erro: " + response.statusText);
-    }
+      .then(response => {
+        console.log('Instituto Gravado: ' + this.state.nome);
+        this.setState({ incluindo: false });
+        this.preencherListInstituto();
+        if (response.ok) {
+          
+        } else {
+          alert("Não foi possível realizar a operação por nome ou acrônimo já existente. Erro: " + response.statusText);
+        }
 
-    })
-    .catch(error => {
-      console.log(error);
-  });
-    
+      })
+      .catch(error => {
+        console.log(error);
+      });
   }
 
-  iniciarIncluir = () =>{
-    this.setState({incluindo: true});
+  iniciarIncluir = () => {
+    this.setState({ incluindo: true });
   }
 
-  renderincluir() {
+  renderIncluir = () => {
     return (
       <div className='mt-5 p-2 col-3'>
         <h1>Formulário de Instituto</h1>
-        {/* Campos de entrada para nome e acrônimo */}
         <TextField label="Nome" fullWidth margin="normal" value={this.state.nome} onChange={this.txtnome_change} />
         <TextField label="Acrônimo" fullWidth margin="normal" value={this.state.acronimo} onChange={this.txtacronimo_change} />
-        {/* Botão para abrir a caixa de diálogo */}
         <Button variant="contained" color="primary" onClick={this.handleOpenDialog}>Salvar</Button>
-        {/* Botão para cancelar */}
-        <Button onClick={() => this.setState({ incluindo: false })} variant="contained" color="default">Cancelar</Button>
-        {/* Caixa de diálogo */}
+        <Button onClick={() => this.setState({ incluindo: false })} variant="contained" color="primary">Cancelar</Button>
         <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
           <DialogTitle>Confirmação</DialogTitle>
           <DialogContent>
@@ -92,13 +82,14 @@ export default class Instituto extends Component {
             <p>Acrônimo: {this.state.acronimo}</p>
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.handleCloseDialog} color="default">Cancelar</Button>
+            <Button onClick={this.handleCloseDialog} color="primary">Cancelar</Button>
             <Button onClick={() => { this.salvarInstituto(); this.handleCloseDialog(); }} color="primary">OK</Button>
           </DialogActions>
         </Dialog>
       </div>
     );
   }
+
   iniciarExcluir = () => {
     const { institutoSelecionado } = this.state;
     if (institutoSelecionado) {
@@ -107,30 +98,28 @@ export default class Instituto extends Component {
       alert("Por favor, selecione um instituto para excluir.");
     }
   };
-  
 
-    excluir = (instituto) => {
-
+  excluir = (instituto) => {
     const requestOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
     };
-  
+
     const url = window.servidor + '/instituto/excluir/' + instituto.id;
     fetch(url, requestOptions)
       .then(response => {
         console.log('Instituto Excluído: ' + instituto.nome);
-        this.preencherListInstituto(); // Atualizando a lista de institutos após a exclusão
+        this.preencherListInstituto();
       })
       .catch(error => console.log(error))
       .finally(() => {
-        this.handleCloseDialog(); // Chamada para desselecionar o instituto
-        this.setState({ institutoSelecionado: null }); // Desselecionar o instituto manualmente
+        this.handleCloseDialog();
+        this.setState({ institutoSelecionado: null });
       });
   }
-  
+
   gravarAlterar = () => {
     const dados = {
       "id": this.state.id,
@@ -150,26 +139,23 @@ export default class Instituto extends Component {
     fetch(url, requestOptions)
       .then(response => {
         console.log('Instituto alterado: ' + this.state.nome);
-        this.setState({ alterando: false }); // Definindo alterando como falso após a alteração
-        this.preencherListInstituto(); // Atualizando a lista de institutos após a alteração
+        this.setState({ alterando: false });
+        this.preencherListInstituto();
         if (response.ok) {
-          // Operação bem-sucedida
           
-      } else {
-          // Operação falhou
+        } else {
           alert("Não foi possível realizar a operação por nome ou acrônimo já existente. Erro: " + response.statusText);
-      }
-  
+        }
+
       })
       .catch(error => {
         console.log(error);
-    })
+      })
 
-    .finally(() => {
-      this.handleCloseDialog(); // Chamada para desselecionar o instituto
-      this.setState({ institutoSelecionado: null }); // Desselecionar o instituto manualmente
-    });
-      
+      .finally(() => {
+        this.handleCloseDialog();
+        this.setState({ institutoSelecionado: null });
+      });
   }
 
   renderAlterar = () => {
@@ -178,9 +164,10 @@ export default class Instituto extends Component {
         <h1>Editar Instituto</h1>
         <TextField label="Id" fullWidth margin="normal" value={this.state.id} />
         <TextField label="Nome" fullWidth margin="normal" value={this.state.nome} onChange={this.txtnome_change} />
-        <TextField label="Acrônimo" fullWidth margin="normal" value={this.state.acronimo} onChange={this.txtacronimo_change} />
-        <Button variant="contained" color="primary" onClick={this.handleOpenDialog}>Salvar</Button>
-        <Button onClick={() => this.setState({ alterando: false })} variant="contained" color="default">Cancelar</Button>
+        <TextField label="Acrônimo" fullWidth
+margin="normal" value={this.state.acronimo} onChange={this.txtacronimo_change} />
+       <Button variant="contained" color="primary" onClick={this.handleOpenDialog}>Salvar</Button>
+<Button variant="contained" color="primary" onClick={() => this.setState({ alterando: false })}>Cancelar</Button>
         <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
             <DialogTitle>Confirmação</DialogTitle>
               <DialogContent>
@@ -191,7 +178,7 @@ export default class Instituto extends Component {
               </DialogContent>
               <DialogActions>
                 <Button variant="contained" color="primary" onClick={() => { this.gravarAlterar(); this.handleCloseDialog(); }}>Salvar</Button>
-                <Button variant="contained" color="default" onClick={()=>{this.handleCloseDialog(); this.setState({ institutoSelecionado: null })}}>Cancelar</Button>
+                <Button variant="contained" color="primary" onClick={()=>{this.handleCloseDialog(); this.setState({ institutoSelecionado: null })}}>Cancelar</Button>
               </DialogActions>
         </Dialog>
       </div>
@@ -365,8 +352,8 @@ export default class Instituto extends Component {
         </Table>
   
         <Button onClick={() => this.iniciarIncluir()} variant="contained" className='mt-3 pl-5' color="primary">Incluir</Button>
-        <Button onClick={() => this.iniciarAlterar(this.state.institutoSelecionado)} variant="contained" className='mt-3 pl-5' color="primary">Editar</Button>
-        <Button onClick={() => {this.iniciarExcluir()} }variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
+<Button onClick={() => this.iniciarAlterar(this.state.institutoSelecionado)} variant="contained" className='mt-3 pl-5' color="primary">Editar</Button>
+<Button onClick={() => {this.iniciarExcluir()} } variant="contained" className='mt-3 pl-5' color="primary">Excluir</Button>
         <Dialog open={this.state.openDialog} onClose={this.handleCloseDialog}>
           <DialogTitle>Confirmação</DialogTitle>
           <DialogContent>
@@ -377,7 +364,7 @@ export default class Instituto extends Component {
           </DialogContent>
           <DialogActions>
             <Button variant="contained" color="primary" onClick={() => { this.excluir(this.state.institutoSelecionado); this.handleCloseDialog(); }}>Excluir</Button>
-            <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
+            <Button variant="contained" color="primary" onClick={this.handleCloseDialog}>Cancelar</Button>
           </DialogActions>
         </Dialog>
   
@@ -430,7 +417,7 @@ export default class Instituto extends Component {
     if (this.state.alterando) {
       pagina = this.renderAlterar();
     } else if (this.state.incluindo) {
-      pagina = this.renderincluir();
+      pagina = this.renderIncluir();
     } else {
       pagina = this.renderExibirLista();
     }

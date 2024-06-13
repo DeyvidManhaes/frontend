@@ -299,7 +299,7 @@ export default class Pesquisador extends Component {
           </DialogContent>
           <DialogActions>
             <Button variant="contained" color="primary" onClick={() => { this.excluir(); this.handleCloseDialog(); }}>Excluir</Button>
-            <Button variant="contained" color="default" onClick={this.handleCloseDialog}>Cancelar</Button>
+            <Button variant="contained" color="primary" onClick={this.handleCloseDialog}>Cancelar</Button>
           </DialogActions>
         </Dialog>
 

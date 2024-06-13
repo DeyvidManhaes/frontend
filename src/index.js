@@ -3,13 +3,22 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import Home from './home/Home';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-window.servidor = 'http://localhost:8080'
+// Definindo o tema
+const theme = createTheme({
+  palette: {
+    mode: 'light', // ou 'dark' dependendo da sua preferência
+  },
+});
+
+window.servidor = 'http://localhost:8080';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider theme={theme}>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 );
 

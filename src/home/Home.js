@@ -14,11 +14,11 @@ export default class Home extends Component {
     const chartConfig = {
       type: 'ring',
       legend: {
-        align: 'center',
+        align: 'right',
         borderWidth: '0px',
         item: {
           cursor: 'pointer',
-          fontSize: '15px',
+          fontSize: '10px',
           offsetX: '-5px',
         },
         layout: 'vertical',
@@ -35,7 +35,7 @@ export default class Home extends Component {
           visible: false,
         },
         detached: false, // turn off click on slices
-        slice: 150, // set hole size in middle of chart
+        slice: 20, // set hole size in middle of chart
       },
       series: [
         { values: [34], backgroundColor: '#FE7A5D' },
@@ -115,12 +115,13 @@ export default class Home extends Component {
         <div className="shortcut-container">
           {/* Atalho para a página de gráficos */}
           <div className="shortcut">
-            <Button onClick={this.handleChartClick} style={{ padding: '10px', position: 'relative' }}>
-              Gráfico de Produção
-              <div id="myChart" className="chart--container" style={{ width: '100px', height: '100px', position: 'absolute', top: '20px', right: '10px' }}>
-                <ZingChart data={chartConfig} height="100px" width="100px" />
+            <div onClick={this.handleChartClick} style={{ padding: '10px', position: 'relative' }}>
+              
+              <div id="myChart" className="chart--container" style={{ width: '10px', height: '10px', position: 'absolute', top: '-15px', right: '400px' }}>
+                Gráfico de Produção
+                <ZingChart data={chartConfig} height="300px" width="300px" />
               </div>
-            </Button>
+            </div>
           </div>
           {/* Atalho para a página de institutos */}
           <div className="shortcut">

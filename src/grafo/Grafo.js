@@ -1,20 +1,97 @@
 import React, { Component } from 'react';
 import { Button, Table, TableHead, TableBody, TableCell, TableRow, TextField, Checkbox } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
-import 'zingchart/es6';
-import ZingChart from 'zingchart-react';
-import 'zingchart/modules-es6/zingchart-depth.min.js';
+import CytoscapeComponent from 'react-cytoscapejs';
+import Cytoscape from 'cytoscape';
 
 // Componente para a tela em branco
-const BlankScreen = ({ config, onCancel }) => (
+const BlankScreen = ({ elements, onCancel }) => (
   <div className="blank-screen" style={{ position: 'relative', width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
     <h2>Gerador de Grafos</h2>
     <div style={{ width: '80%', height: '70%' }}>
-      <ZingChart data={config} />
+    <CytoscapeComponent
+  elements={elements}
+  layout={{
+    name: 'circle',
+    radius: 10, // Aumente o raio para ampliar o círculo
+    spacingFactor: 0.5, // Ajuste o fator de espaçamento para aumentar a distância entre os nós
+    avoidOverlap: true,
+    nodeDimensionsIncludeLabels: true
+  }}
+         stylesheet={nodeStyles}
+  style={{ width: '100%', height: '800px' }} // Ajuste a altura conforme necessário para melhor visualização
+  
+/>
     </div>
     <Button variant="contained" color="secondary" onClick={onCancel}>Voltar</Button>
   </div>
 );
+const nodeStyles = [
+  {
+    selector: 'node',
+    style: {
+      'background-color': '#1a8cff',
+      'label': 'data(label)',
+      'text-valign': 'center',
+      'text-wrap': 'wrap',
+      'text-max-width': '100px',
+      'width': 'label',
+      'height': 'label',
+      'padding': '10px',
+      'shape': 'ellipse'
+    }
+  },
+  {
+    selector: '.instituto',
+    style: {
+      'background-color': '#ffcc00',
+      'width': 'label * 1.5',
+      'height': 'label * 1.5'
+    }
+  },
+  {
+    selector: '.pesquisador',
+    style: {
+      'background-color': '#ff6666',
+      'width': 'label * 1.2',
+      'height': 'label * 1.2'
+    }
+  },
+  {
+    selector: '.vermelha',
+    style: {
+      'line-color': 'red',
+      'target-arrow-color': 'red',
+      'width': 2,
+      'label': 'data(label)',
+      'text-rotation': 'autorotate',
+      'color': 'red'
+    }
+  },
+  {
+    selector: '.amarela',
+    style: {
+      'line-color': 'yellow',
+      'target-arrow-color': 'yellow',
+      'width': 2,
+      'label': 'data(label)',
+      'text-rotation': 'autorotate',
+      'color': 'yellow'
+    }
+  },
+  {
+    selector: '.verde',
+    style: {
+      'line-color': 'green',
+      'target-arrow-color': 'green',
+      'width': 2,
+      'label': 'data(label)',
+      'text-rotation': 'autorotate',
+      'color': 'green'
+    }
+  }
+];
+
 
 export default class GraphGeneration extends Component {
   constructor(props) {
@@ -28,11 +105,12 @@ export default class GraphGeneration extends Component {
       filteredProducoes: [],
       selectedInstitutos: [],
       selectedProducoes: [],
+      tipos: [],
       selectedPesquisadores: [],
       tipoVertice: 'pesquisador',
       npInicio: [1, 2, 4],
       npFim: [1, 2, 4],
-      config: {}, // Adicione o estado config para o gráfico ZingChart
+      elements: [], // Adicione o estado elements para o Cytoscape
       showGraphOverlay: false, // Adicione o estado showGraphOverlay para controlar a exibição da sobreposição
       showBlankScreen: false // Estado para controlar a exibição da tela em branco
     };
@@ -41,6 +119,7 @@ export default class GraphGeneration extends Component {
   componentDidMount() {
     this.fetchPesquisadores();
     this.fetchProducoes();
+    this.fetchTipos();
   }
 
   fetchPesquisadores = () => {
@@ -71,6 +150,40 @@ export default class GraphGeneration extends Component {
       })
       .catch(error => console.error('Erro ao buscar produções:', error));
   }
+
+   fetchTipos = () => {
+    const url = `${window.servidor}/tipo/exibir`;
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        this.setState({
+          tipos: data,
+        });
+      })
+      .catch(error => console.error('Erro ao buscar os tipos:', error));
+   }
+  
+  fetchTrabalhosEntrePesquisadores = () => {
+  const url = `${window.servidor}/pesquisador/contarTrabalhosEntrePesquisadores`;
+  return fetch(url)
+    .then(response => response.json())
+    .catch(error => {
+      console.error('Erro ao buscar trabalhos entre pesquisadores:', error);
+      return {};
+    });
+}
+
+fetchTrabalhosEntreInstitutos = () => {
+  const url = `${window.servidor}/instituto/contarTrabalhosEntreInstitutos`;
+  return fetch(url)
+    .then(response => response.json())
+    .catch(error => {
+      console.error('Erro ao buscar trabalhos entre institutos:', error);
+      return {};
+    });
+}
+
+
 
   updateFilteredData = () => {
     const { producoes, pesquisadores, institutos, selectedInstitutos, selectedPesquisadores, selectedProducoes } = this.state;
@@ -109,44 +222,82 @@ export default class GraphGeneration extends Component {
     this.setState({ filteredInstitutos, filteredPesquisadores, filteredProducoes });
   };
 
-  applyFilters = () => {
-    const { tipoVertice, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedPesquisadores } = this.state;
-    let dataPoints = [];
+  applyFilters = async () => {
+  const { tipoVertice, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedPesquisadores, npInicio, npFim } = this.state;
+  let elements = [];
 
-    if (tipoVertice === 'instituto') {
-      let institutos = selectedInstitutos.length > 0 ? selectedInstitutos : this.state.institutos;
-      institutos.forEach(instituto => {
-        let producoesCount = filteredProducoes.filter(p => p.pesquisador?.instituto?.nome === instituto).length;
-        dataPoints.push({ text: instituto, size: producoesCount });
+  if (tipoVertice === 'instituto') {
+    let institutos = selectedInstitutos.length > 0 ? selectedInstitutos : this.state.institutos;
+    const trabalhosEntreInstitutos = await this.fetchTrabalhosEntreInstitutos();
+    institutos.forEach(instituto => {
+      let producoesCount = filteredProducoes.filter(p => p.pesquisador?.instituto?.nome === instituto).length;
+      elements.push({
+        data: {
+          id: instituto,
+          label: `${instituto} (${producoesCount} produções)`,
+          group: 'instituto'
+        },
+        classes: 'instituto',
+        position: { x: 0, y: 0 } // Definindo a posição inicial dos nós de instituto
       });
-    } else if (tipoVertice === 'pesquisador') {
-      let pesquisadores = selectedPesquisadores.length > 0 ? selectedPesquisadores : filteredPesquisadores;
-      pesquisadores.forEach(pesquisador => {
-        let producoesCount = filteredProducoes.filter(p => p.pesquisador?.id === pesquisador.id).length;
-        dataPoints.push({ text: pesquisador.nome, size: producoesCount, group: pesquisador.instituto?.nome });
-      });
-    }
+    });
 
-    const config = {
-      type: 'bubble',
-      series: [
-        {
-          values: dataPoints.map(dp => [dp.text, dp.size])
-        }
-      ],
-      scaleR: {
-        visible: false // Oculta os eixos x e y
-      },
-      plotarea: {
-        margin: false // Ajusta a margem da área do gráfico
-      },
-      tooltip: {
-        text: "%t: %v produções"
+    // Adicionando arestas entre institutos
+    Object.entries(trabalhosEntreInstitutos).forEach(([key, value]) => {
+      const [source, target] = key.split('-');
+      let color = this.getEdgeColor(value, npInicio, npFim);
+      if (institutos.includes(source) && institutos.includes(target)) {
+        elements.push({
+          data: { id: `${source}-${target}`, source, target, label: `${value}` },
+          classes: color
+        });
       }
-    };
+    });
 
-    this.setState({ config, showGraphOverlay: true, showBlankScreen: true }); // Mostra a sobreposição do gráfico ao aplicar os filtros
-  };
+  } else if (tipoVertice === 'pesquisador') {
+    let pesquisadores = selectedPesquisadores.length > 0 ? selectedPesquisadores : filteredPesquisadores;
+    const trabalhosEntrePesquisadores = await this.fetchTrabalhosEntrePesquisadores();
+    pesquisadores.forEach(pesquisador => {
+      let producoesCount = filteredProducoes.filter(p => p.pesquisador?.id === pesquisador.id).length;
+      elements.push({
+        data: {
+          id: pesquisador.nome,
+          label: `${pesquisador.nome} (${producoesCount} produções)`,
+          group: pesquisador.instituto?.nome
+        },
+        classes: 'pesquisador',
+        position: { x: 0, y: 0 } // Definindo a posição inicial dos nós de pesquisador
+      });
+    });
+
+    // Adicionando arestas entre pesquisadores
+    Object.entries(trabalhosEntrePesquisadores).forEach(([key, value]) => {
+      const [source, target] = key.split('-');
+      let color = this.getEdgeColor(value, npInicio, npFim);
+      if (pesquisadores.some(p => p.nome === source) && pesquisadores.some(p => p.nome === target)) {
+        elements.push({
+          data: { id: `${source}-${target}`, source, target, label: `${value}` },
+          classes: color
+        });
+      }
+    });
+  }
+
+  this.setState({ elements, showGraphOverlay: true, showBlankScreen: true });
+};
+
+ getEdgeColor = (value, npInicio, npFim) => {
+    let color = 'verde';
+    if (value >= npInicio[2] && value <= npFim[2]) {
+      color = 'verde';
+    } else if (value >= npInicio[1] && value <= npFim[1]) {
+      color = 'amarela';
+    } else if (value >= npInicio[0] && value <= npFim[0]) {
+      color = 'vermelha';
+    }
+    return color;
+  }
+
 
   handleMultipleSelectChange = (event, value, type) => {
     this.setState({ [type]: value }, this.updateFilteredData);
@@ -169,9 +320,9 @@ export default class GraphGeneration extends Component {
 
     // Verifica as regras de validação para npFim
     if (index === 0) {
-      newNpFim[0] = Math.min(Math.max(value, 1), 2);
+      newNpFim[0] = Math.min(Math.max(value, 1));
     } else if (index === 1) {
-      newNpFim[1] = Math.min(Math.max(value, npInicio[1], 1), 5);
+      newNpFim[1] = Math.min(Math.max(value, npInicio[1]));
     } else if (index === 2) {
       newNpFim[2] = Math.max(value, npInicio[2]);
     }
@@ -185,7 +336,40 @@ export default class GraphGeneration extends Component {
   };
 
   render() {
-    const { filteredInstitutos, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedProducoes, selectedPesquisadores, tipoVertice, npInicio, npFim, showGraphOverlay, showBlankScreen, config } = this.state;
+    const { filteredInstitutos,tipos, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedProducoes, selectedPesquisadores, tipoVertice, npInicio, npFim, showGraphOverlay, showBlankScreen, elements } = this.state;
+    const nodeStyles = [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#1a8cff', // Cor de fundo dos nós
+          'label': 'data(label)', // Exibir rótulo dos nós
+          'text-valign': 'center', // Alinhamento vertical do texto
+          'text-wrap': 'wrap', // Quebra de linha automática para o texto
+          'text-max-width': '100px', // Largura máxima para o texto
+          'width': 'label', // Largura baseada no tamanho do rótulo
+          'height': 'label', // Altura baseada no tamanho do rótulo
+          'padding': '10px', // Espaçamento interno
+          'shape': 'ellipse' // Formato do nó (ellipse = círculo)
+        }
+      },
+      {
+        selector: '.instituto',
+        style: {
+          'background-color': '#ffcc00', // Cor de fundo específica para nós de instituto
+          'width': 'label * 1.5', // Aumentar largura dos nós de instituto
+          'height': 'label * 1.5' // Aumentar altura dos nós de instituto
+        }
+      },
+      {
+        selector: '.pesquisador',
+        style: {
+          'background-color': '#ff6666', // Cor de fundo específica para nós de pesquisador
+          'width': 'label * 1.2', // Aumentar largura dos nós de pesquisador
+          'height': 'label * 1.2' // Aumentar altura dos nós de pesquisador
+        }
+      }
+    ];
+
 
     return (
       <div className='p-5'>
@@ -200,7 +384,7 @@ export default class GraphGeneration extends Component {
               value={selectedInstitutos}
               onChange={(event, value) => this.handleMultipleSelectChange(event, value, 'selectedInstitutos')}
               renderInput={(params) => (
-                <TextField {...params} variant="outlined" label="Selecione Institutos" />
+                <TextField {...params} variant="outlined" label="Todos" />
               )}
               renderOption={(props, option, { selected }) => (
                 <li {...props}>
@@ -217,12 +401,12 @@ export default class GraphGeneration extends Component {
             <label><h5>Produção:</h5></label>
             <Autocomplete
               multiple
-              options={filteredProducoes}
-              getOptionLabel={(option) => option.titulo}
+              options={tipos}
+              getOptionLabel={(option) => option.nome}
               value={selectedProducoes}
               onChange={(event, value) => this.handleMultipleSelectChange(event, value, 'selectedProducoes')}
               renderInput={(params) => (
-                <TextField {...params} variant="outlined" label="Selecione Produções" />
+                <TextField {...params} variant="outlined" label="Todos" />
               )}
               renderOption={(props, option, { selected }) => (
                 <li {...props}>
@@ -230,7 +414,7 @@ export default class GraphGeneration extends Component {
                     checked={selected}
                     style={{ marginRight: 8 }}
                   />
-                  {option.titulo}
+                  {option.nome}
                 </li>
               )}
             />
@@ -244,7 +428,7 @@ export default class GraphGeneration extends Component {
               value={selectedPesquisadores}
               onChange={(event, value) => this.handleMultipleSelectChange(event, value, 'selectedPesquisadores')}
               renderInput={(params) => (
-                <TextField {...params} variant="outlined" label="Selecione Pesquisadores" />
+                <TextField {...params} variant="outlined" label="Todos" />
               )}
               renderOption={(props, option, { selected }) => (
                 <li {...props}>
@@ -289,7 +473,7 @@ export default class GraphGeneration extends Component {
                     onChange={(e) => this.handleNpFimChange(index, parseInt(e.target.value))}
                     inputProps={{
                       min: npInicio[index],
-                      max: index === 0 ? npInicio[index] + 1 : index === 1 ? 5 : undefined // ajuste máximo para a segunda linha até 5 e sem limite para a terceira linha
+                      max: undefined // ajuste máximo para a segunda linha até 5 e sem limite para a terceira linha
                     }}
                   />
                 </TableCell>
@@ -297,10 +481,10 @@ export default class GraphGeneration extends Component {
             ))}
           </TableBody>
         </Table>
-        {showGraphOverlay && (
+         {showGraphOverlay && (
           <div className="graph-overlay">
             <div style={{ width: '100%', height: '100%', position: 'fixed', top: 0, left: 0, zIndex: 100, backgroundColor: 'rgba(255, 255, 255, 0.9)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <BlankScreen config={config} onCancel={() => this.setState({ showGraphOverlay: false, showBlankScreen: false })} />
+              <BlankScreen elements={elements} onCancel={() => this.setState({ showGraphOverlay: false, showBlankScreen: false })} />
             </div>
           </div>
         )}
@@ -308,4 +492,3 @@ export default class GraphGeneration extends Component {
     );
   }
 }
-
