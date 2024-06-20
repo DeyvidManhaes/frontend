@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { TextField, Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
 import './ProducaoList.css';
 
 export default class Producao extends Component {
@@ -7,7 +8,7 @@ export default class Producao extends Component {
     super(props);
     this.state = {
       currentPage: 1,
-      itemsPerPage: 5,
+      itemsPerPage: 30,
       dataInicio: '',
       dataFim: '',
       buscainstituto: '',
@@ -26,6 +27,7 @@ export default class Producao extends Component {
     this.fetchTrabalhos();
     this.fetchNomes();
     this.fetchPesquisadores();
+   this.updateFiltersFromURL(); // Método para atualizar filtros a partir da URL
   }
 
   fetchTrabalhos = () => {
@@ -60,6 +62,26 @@ export default class Producao extends Component {
       .then(datanome => this.setState({ nomesCitacao: datanome }))
       .catch(error => console.error('Erro ao buscar nomes:', error));
   }
+
+  updateFiltersFromURL = () => {
+    // Lógica para atualizar filtros com base nos parâmetros da URL
+    const params = new URLSearchParams(window.location.search);
+    const dataInicio = params.get('dataInicio');
+    const dataFim = params.get('dataFim');
+    const buscainstituto = params.get('buscainstituto');
+    const buscapesquisador = params.get('buscapesquisador');
+    const buscatipoproducao = params.get('buscatipoproducao');
+
+    this.setState({
+      dataInicio: dataInicio || '',
+      dataFim: dataFim || '',
+      buscainstituto: buscainstituto || '',
+      buscapesquisador: buscapesquisador || '',
+      buscatipoproducao: buscatipoproducao || ''
+    }, () => {
+      this.handleAplicarFiltro(); // Aplicar filtro após atualização dos estados
+    });
+  };
 
   getNomeCitacaoById = (trabalhoId) => {
     const { nomesCitacao } = this.state;
@@ -101,6 +123,7 @@ export default class Producao extends Component {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredTrabalhos.slice(indexOfFirstItem, indexOfLastItem);
+    
 
     return currentItems.map((trabalho, index) => (
       <TableRow key={index}>
@@ -171,6 +194,8 @@ export default class Producao extends Component {
           <div className='row mt-1'>
             <div className="col-md-3">
               <label><h5>Instituto:</h5></label>
+             
+
               <select name="buscainstituto" value={buscainstituto} onChange={this.handleFilterChange} className="form-control">
                 <option value="">Todos</option>
                 {this.state.institutos.map((instituto, index) => (
@@ -199,7 +224,7 @@ export default class Producao extends Component {
           </div>
         </div>
         <div className='p-3 col'> 
-          <label className='col-1'><h5>Total de trabalhos:</h5></label>
+          <label className=''><h5>Total de trabalhos:</h5></label>
           <div class="badge text-bg-primary text-wrap col-1">
          <h4> {contador}</h4></div></div>
         <Table className='mt-2'>

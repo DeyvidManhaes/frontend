@@ -5,14 +5,21 @@ import CytoscapeComponent from 'react-cytoscapejs';
 import Cytoscape from 'cytoscape';
 
 // Componente para a tela em branco
-const BlankScreen = ({ elements, onCancel }) => (
+const BlankScreen = ({ elements, onCancel, tipolayout, handlelayoutChange }) => (
+  
   <div className="blank-screen" style={{ position: 'relative', width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
     <h2>Gerador de Grafos</h2>
+   
+    <div className='column-1 col-1 md-3'>
+       <Button   variant="contained" color="secondary" onClick={onCancel}>Voltar</Button>
+      
+      </div>
     <div style={{ width: '80%', height: '70%' }}>
+      
     <CytoscapeComponent
   elements={elements}
   layout={{
-    name: 'circle',
+    name: tipolayout || 'circle' ,
     radius: 10, // Aumente o raio para ampliar o círculo
     spacingFactor: 0.5, // Ajuste o fator de espaçamento para aumentar a distância entre os nós
     avoidOverlap: true,
@@ -22,8 +29,8 @@ const BlankScreen = ({ elements, onCancel }) => (
   style={{ width: '100%', height: '800px' }} // Ajuste a altura conforme necessário para melhor visualização
   
 />
-    </div>
-    <Button variant="contained" color="secondary" onClick={onCancel}>Voltar</Button>
+    </div >
+    
   </div>
 );
 const nodeStyles = [
@@ -108,6 +115,7 @@ export default class GraphGeneration extends Component {
       tipos: [],
       selectedPesquisadores: [],
       tipoVertice: 'pesquisador',
+      tipolayout:'circle',
       npInicio: [1, 2, 4],
       npFim: [1, 2, 4],
       elements: [], // Adicione o estado elements para o Cytoscape
@@ -306,6 +314,10 @@ fetchTrabalhosEntreInstitutos = () => {
   handleVerticeChange = (event) => {
     this.setState({ tipoVertice: event.target.value });
   };
+  handlelayoutChange = (event) => {
+    this.setState({ tipolayout: event.target.value });
+    return event;
+  };
 
   handleNpFimChange = (index, value) => {
     const { npInicio } = this.state;
@@ -316,6 +328,7 @@ fetchTrabalhosEntreInstitutos = () => {
     let newNpInicio = [...npInicio];
     for (let i = index + 1; i < newNpInicio.length; i++) {
       newNpInicio[i] = newNpFim[i - 1] + 1;
+      newNpFim[i] = newNpInicio[i];
     }
 
     // Verifica as regras de validação para npFim
@@ -336,7 +349,7 @@ fetchTrabalhosEntreInstitutos = () => {
   };
 
   render() {
-    const { filteredInstitutos,tipos, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedProducoes, selectedPesquisadores, tipoVertice, npInicio, npFim, showGraphOverlay, showBlankScreen, elements } = this.state;
+    const { filteredInstitutos,tipos, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedProducoes, selectedPesquisadores, tipoVertice, npInicio, npFim, showGraphOverlay, showBlankScreen, elements, tipolayout } = this.state;
     const nodeStyles = [
       {
         selector: 'node',

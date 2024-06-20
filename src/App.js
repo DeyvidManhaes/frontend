@@ -2,20 +2,24 @@ import React, { Component } from 'react';
 import Menu from './menu/Menu';
 import Home from './home/Home'; 
 import Rodape from './rodape/Rodape';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route , useNavigate, Switch } from 'react-router-dom';
 import Instituto from './instituto/Instituto';
 import Producao from './producao/Producao';
 import Grafo from './grafo/Grafo';
 import Pesquisador from './pesquisador/Pesquisador';
-
+const HomeWithNavigate = () => {
+  const navigate = useNavigate();
+  return <Home navigate={navigate} />;
+};
 export default class App extends Component {
   render() {
+   
     return (
       <Router>
         <div><Menu /></div>
         <div className='p-1'>
           <Routes> 
-            <Route exact path="/" element={<Home />} /> {/* Usando chaves para Home */}
+             <Route path="/" element={<HomeWithNavigate />} />
             <Route path="/instituto" element={<Instituto />} />
             <Route path="/pesquisador" element={<Pesquisador/>} />
             <Route path="/producao" element={<Producao />} />
