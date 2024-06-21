@@ -133,8 +133,8 @@ class Home extends Component {
 
   updatePieChart = () => {
     const { trabalhos } = this.state;
-    const articleCount = trabalhos.filter(trabalho => trabalho.tipo && trabalho.tipo.nome === 'Artigo Publicado').length;
-    const bookCount = trabalhos.filter(trabalho => trabalho.tipo && trabalho.tipo.nome === 'Livro Publicado').length;
+    const articleCount = trabalhos.filter(trabalho => trabalho.tipo && trabalho.tipo.id === 10).length;
+    const bookCount = trabalhos.filter(trabalho => trabalho.tipo && trabalho.tipo.id === 12).length;
 
     const chartConfigPie = {
       type: 'ring',
@@ -247,8 +247,8 @@ class Home extends Component {
                 <ZingChart data={chartConfigPie} height='195' width='100%' />
               </div>
               <div className="legend-left">
-                <span className="legend-item"><span className="color-box" style={{ backgroundColor: '#FF6384' }}></span> Artigos </span>
-                <span className="legend-item"><span className="color-box" style={{ backgroundColor: '#36A2EB' }}></span> Livros</span>
+                <span className="legend-item"><span className="color-box" style={{ backgroundColor: '#FF6384' }}></span> Livros </span>
+                <span className="legend-item"><span className="color-box" style={{ backgroundColor: '#36A2EB' }}></span> Artigos</span>
               </div>
             </div>
           </div>
