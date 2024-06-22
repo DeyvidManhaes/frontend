@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
 import { Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
+import { useLocation } from 'react-router-dom'; // Certifique-se de importar corretamente o useLocation se for necessário
+
 import './ProducaoList.css';
 
 export default class Producao extends Component {
@@ -17,29 +18,33 @@ export default class Producao extends Component {
       contador: 0,
       trabalhos: [],
       filteredTrabalhos: [],
-      institutos: [],
       pesquisadores: [],
+      institutos: [],
       nomesCitacao: [],
     };
   }
 
   componentDidMount() {
     this.fetchTrabalhos();
-    this.fetchNomes();
     this.fetchPesquisadores();
-   this.updateFiltersFromURL(); // Método para atualizar filtros a partir da URL
+    this.fetchNomes();
+    this.updateFiltersFromURL();
   }
 
   fetchTrabalhos = () => {
-    const url = window.servidor + "/trabalho/exibir";
+    const url = window.servidor + '/trabalho/exibir';
     fetch(url)
       .then(response => response.json())
-      .then(data => this.setState({ trabalhos: data, filteredTrabalhos: data, contador: data.length }))
+      .then(data => {
+        this.setState({ trabalhos: data, filteredTrabalhos: data, contador: data.length }, () => {
+          this.updateFiltersFromURL();
+        });
+      })
       .catch(error => console.error('Erro ao buscar trabalhos:', error));
-  }
+  };
 
   fetchPesquisadores = () => {
-    const url = window.servidor + "/pesquisador/exibir";
+    const url = window.servidor + '/pesquisador/exibir';
     fetch(url)
       .then(response => response.json())
       .then(data => {
@@ -53,18 +58,17 @@ export default class Producao extends Component {
         this.setState({ pesquisadores: data, institutos: institutosUnicos });
       })
       .catch(error => console.error('Erro ao buscar pesquisadores:', error));
-  }
+  };
 
   fetchNomes = () => {
-    const url = window.servidor + "/nome/exibir";
+    const url = window.servidor + '/nome/exibir';
     fetch(url)
       .then(response => response.json())
       .then(datanome => this.setState({ nomesCitacao: datanome }))
       .catch(error => console.error('Erro ao buscar nomes:', error));
-  }
+  };
 
   updateFiltersFromURL = () => {
-    // Lógica para atualizar filtros com base nos parâmetros da URL
     const params = new URLSearchParams(window.location.search);
     const dataInicio = params.get('dataInicio');
     const dataFim = params.get('dataFim');
@@ -77,53 +81,73 @@ export default class Producao extends Component {
       dataFim: dataFim || '',
       buscainstituto: buscainstituto || '',
       buscapesquisador: buscapesquisador || '',
-      buscatipoproducao: buscatipoproducao || ''
+      buscatipoproducao: buscatipoproducao || '',
     }, () => {
-      this.handleAplicarFiltro(); // Aplicar filtro após atualização dos estados
+      if (this.state.trabalhos.length > 0) {
+        this.handleAplicarFiltro();
+      }
     });
   };
 
-  getNomeCitacaoById = (trabalhoId) => {
-    const { nomesCitacao } = this.state;
-    const nomeCitacao = nomesCitacao.find(nome => nome.trabalho.id === trabalhoId);
-    return nomeCitacao ? nomeCitacao.nome : '';
-  };
-
-  handleDataInicioChange = (event) => {
+  handleDataInicioChange = event => {
     this.setState({ dataInicio: event.target.value });
   };
 
-  handleDataFimChange = (event) => {
+  handleDataFimChange = event => {
     this.setState({ dataFim: event.target.value });
   };
 
-  handleFilterChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value });
+  handleFilterChange = event => {
+    const { name, value } = event.target;
+    this.setState({ [name]: value }, () => {
+      if (name === 'buscainstituto') {
+        this.filterPesquisadoresByInstituto(value);
+      } else {
+        this.handleAplicarFiltro();
+      }
+    });
+  };
+
+  filterPesquisadoresByInstituto = instituto => {
+    const { pesquisadores } = this.state;
+    const pesquisadoresFiltrados = pesquisadores.filter(pesquisador => {
+      return pesquisador.instituto && pesquisador.instituto.nome === instituto;
+    });
+    this.setState({ pesquisadoresFiltrados });
   };
 
   handleAplicarFiltro = () => {
-    const { buscainstituto, buscapesquisador, buscatipoproducao, dataInicio, dataFim, trabalhos, pesquisadores } = this.state;
+    const { buscainstituto, buscapesquisador, buscatipoproducao, dataInicio, dataFim, pesquisadores, trabalhos } = this.state;
 
-    const trabalhosFiltrados = trabalhos.filter(trabalho => {
+    let trabalhosFiltrados = trabalhos.filter(trabalho => {
       const pesquisador = pesquisadores.find(pesq => pesq.id === trabalho.pesquisador.id);
-      const byInstituto = buscainstituto ? pesquisador && pesquisador.instituto && pesquisador.instituto.nome === buscainstituto : true;
       const byPesquisador = buscapesquisador ? trabalho.pesquisador && trabalho.pesquisador.id === parseInt(buscapesquisador) : true;
       const byTipo = buscatipoproducao ? trabalho.tipo && trabalho.tipo.nome === buscatipoproducao : true;
       const byAnoInicio = dataInicio ? trabalho.ano >= dataInicio : true;
       const byAnoFim = dataFim ? trabalho.ano <= dataFim : true;
 
-      return byInstituto && byPesquisador && byTipo && byAnoInicio && byAnoFim;
+      return byPesquisador && byTipo && byAnoInicio && byAnoFim;
     });
 
-    this.setState({ filteredTrabalhos: trabalhosFiltrados, currentPage: 1, contador: trabalhosFiltrados.length });
-  }
+    if (buscainstituto) {
+      const pesquisadoresFiltrados = pesquisadores.filter(pesquisador => pesquisador.instituto && pesquisador.instituto.nome === buscainstituto);
+      trabalhosFiltrados = trabalhosFiltrados.filter(trabalho => {
+        return pesquisadoresFiltrados.some(pesquisador => pesquisador.id === trabalho.pesquisador.id);
+      });
+    }
+
+    this.setState({
+      filteredTrabalhos: trabalhosFiltrados,
+      currentPage: 1,
+      contador: trabalhosFiltrados.length,
+    });
+  };
 
   renderItems = () => {
     const { currentPage, itemsPerPage, filteredTrabalhos } = this.state;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredTrabalhos.slice(indexOfFirstItem, indexOfLastItem);
-    
 
     return currentItems.map((trabalho, index) => (
       <TableRow key={index}>
@@ -133,30 +157,36 @@ export default class Producao extends Component {
     ));
   };
 
-  getDetalhamento = (trabalho) => {
+  getDetalhamento = trabalho => {
     if (trabalho && trabalho.tipo) {
       const tipoNome = trabalho.tipo.nome;
-      if (tipoNome === "Livro Publicado") {
+      if (tipoNome === 'Livro Publicado') {
         const nomeCitacaoLivro = this.getNomeCitacaoById(trabalho.id);
         return `${nomeCitacaoLivro}, ${trabalho.titulo}, ${trabalho.editora}, ${trabalho.local}, ${trabalho.ano}`;
-      } else if (tipoNome === "Artigo Publicado") {
-        const nomeCitacaoArtigo = this.getNomeCitacaoById(trabalho.id) || "";
+      } else if (tipoNome === 'Artigo Publicado') {
+        const nomeCitacaoArtigo = this.getNomeCitacaoById(trabalho.id) || '';
         return `${nomeCitacaoArtigo}, ${trabalho.titulo}, ${trabalho.periodico}, ${trabalho.local}, ${trabalho.ano}`;
       }
     }
-    return "Detalhes não disponíveis";
+    return 'Detalhes não disponíveis';
   };
 
-  handleChangeItemsPerPage = (event) => {
+  getNomeCitacaoById = trabalhoId => {
+    const { nomesCitacao } = this.state;
+    const nomeCitacao = nomesCitacao.find(nome => nome.trabalho.id === trabalhoId);
+    return nomeCitacao ? nomeCitacao.nome : '';
+  };
+
+  handleChangeItemsPerPage = event => {
     this.setState({ itemsPerPage: parseInt(event.target.value), currentPage: 1 });
   };
 
-  paginate = (pageNumber) => {
+  paginate = pageNumber => {
     this.setState({ currentPage: pageNumber });
   };
 
   render() {
-    const { currentPage, itemsPerPage, pesquisadores, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, filteredTrabalhos, contador } = this.state;
+    const { currentPage, itemsPerPage, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, contador, filteredTrabalhos } = this.state;
     const totalPages = Math.ceil(filteredTrabalhos.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
@@ -167,69 +197,71 @@ export default class Producao extends Component {
     return (
       <div className='p-1 mt-5'>
         <h1>Itens de Produção</h1>
-        <div className="search row mt-3 justify-content-between">
-          <div className="row">
-            <div className="col-md-3">
+        <div className='search row mt-3 justify-content-between'>
+          <div className='row'>
+            <div className='col-md-3'>
               <label><h5>Ano Início:</h5></label>
-              <select className="form-control" value={dataInicio} onChange={this.handleDataInicioChange}>
-                <option value="">Todos</option>
-                {anosFiltradosInicio.map(ano => (
+              <select className='form-control' value={dataInicio} onChange={this.handleDataInicioChange}>
+                <option value=''>Todos</option>
+                                {anosFiltradosInicio.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
               </select>
             </div>
-            <div className="col-md-3">
+            <div className='col-md-3'>
               <label><h5>Ano Fim:</h5></label>
-              <select className="form-control" value={dataFim} onChange={this.handleDataFimChange}>
-                <option value="">Todos</option>
+              <select className='form-control' value={dataFim} onChange={this.handleDataFimChange}>
+                <option value=''>Todos</option>
                 {anosFiltradosFim.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
               </select>
             </div>
-            <div className="col-md-2">
-              <Button variant="contained" color="primary" onClick={this.handleAplicarFiltro} className="col mt-3"><h6>Aplicar Filtro</h6></Button>
+            <div className='col-md-2'>
+              <Button variant='contained' color='primary' onClick={this.handleAplicarFiltro} className='col mt-3'><h6>Aplicar Filtro</h6></Button>
             </div>
           </div>
           <div className='row mt-1'>
-            <div className="col-md-3">
+            <div className='col-md-3'>
               <label><h5>Instituto:</h5></label>
-             
-
-              <select name="buscainstituto" value={buscainstituto} onChange={this.handleFilterChange} className="form-control">
-                <option value="">Todos</option>
+              <select name='buscainstituto' value={buscainstituto} onChange={this.handleFilterChange} className='form-control'>
+                <option value=''>Todos</option>
                 {this.state.institutos.map((instituto, index) => (
                   <option key={index} value={instituto}>{instituto}</option>
                 ))}
               </select>
             </div>
-            <div className="col-md-3">
+            <div className='col-md-3'>
               <label><h5>Pesquisador:</h5></label>
-              <select name="buscapesquisador" value={buscapesquisador} onChange={this.handleFilterChange} className="form-control">
-                <option value="">Todos</option>
-                {pesquisadores.map(pesquisador => (
+              <select name='buscapesquisador' value={buscapesquisador} onChange={this.handleFilterChange} className='form-control'>
+                <option value=''>Todos</option>
+                {this.state.pesquisadores.map(pesquisador => (
                   <option key={pesquisador.id} value={pesquisador.id}>{pesquisador.nome}</option>
                 ))}
               </select>
             </div>
-            <div className="col-md-3">
+            <div className='col-md-3'>
               <label><h5>Tipo de Produção:</h5></label>
-              <select name="buscatipoproducao" value={buscatipoproducao} onChange={this.handleFilterChange} className="form-control">
-                <option value="">Todos</option>
-                {["Artigo Publicado", "Livro Publicado"].map(tipo => (
+              <select name='buscatipoproducao' value={buscatipoproducao} onChange={this.handleFilterChange} className='form-control'>
+                <option value=''>Todos</option>
+                {['Artigo Publicado', 'Livro Publicado'].map(tipo => (
                   <option key={tipo} value={tipo}>{tipo}</option>
                 ))}
               </select>
             </div>
           </div>
         </div>
+
         <div className='p-3 col'> 
           <label className=''><h5>Total de trabalhos:</h5></label>
-          <div class="badge text-bg-primary text-wrap col-1">
-         <h4> {contador}</h4></div></div>
+          <div className='badge text-bg-primary text-wrap col-1'>
+            <h4>{contador}</h4>
+          </div>
+        </div>
+
         <Table className='mt-2'>
           <TableHead>
-            <TableRow className="search-container mt-5 p-5">
+            <TableRow className='search-container mt-5 p-5'>
               <TableCell>Tipo</TableCell>
               <TableCell>Detalhamento</TableCell>
             </TableRow>
@@ -238,44 +270,47 @@ export default class Producao extends Component {
             {this.renderItems()}
           </TableBody>
         </Table>
-        <nav aria-label="Page navigation example" className="mt-3">
-          <ul className="pagination justify-content-center">
-            <li className="page-item">
-              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(1)} aria-label="First">
-                <span aria-hidden="true">&lt;&lt;</span>
+
+        <nav aria-label='Page navigation example' className='mt-3'>
+          <ul className='pagination justify-content-center'>
+            <li className='page-item'>
+              <a className='page-link' href='javascript:void(0)' onClick={() => this.paginate(1)} aria-label='First'>
+                <span aria-hidden='true'>&lt;&lt;</span>
               </a>
             </li>
-            <li className="page-item">
-              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(currentPage - 1)} aria-label="Previous">
-                <span aria-hidden="true">&lt;</span>
+            <li className='page-item'>
+              <a className='page-link' href='javascript:void(0)' onClick={() => this.paginate(currentPage - 1)} aria-label='Previous'>
+                <span aria-hidden='true'>&lt;</span>
               </a>
             </li>
             {pageNumbers.map((number) => (
               <li key={number} className={`page-item ${number === currentPage ? 'active' : ''}`}>
-                <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(number)}>{number}</a>
+                <a className='page-link' href='javascript:void(0)' onClick={() => this.paginate(number)}>{number}</a>
               </li>
             ))}
-            <li className="page-item">
-              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(currentPage + 1)} aria-label="Next">
-                <span aria-hidden="true">&gt;</span>
+            <li className='page-item'>
+              <a className='page-link' href='javascript:void(0)' onClick={() => this.paginate(currentPage + 1)} aria-label='Next'>
+                <span aria-hidden='true'>&gt;</span>
               </a>
             </li>
-            <li className="page-item">
-              <a className="page-link" href="javascript:void(0)" onClick={() => this.paginate(totalPages)} aria-label="Last">
-                <span aria-hidden="true">&gt;&gt;</span>
+            <li className='page-item'>
+              <a className='page-link' href='javascript:void(0)' onClick={() => this.paginate(totalPages)} aria-label='Last'>
+                <span aria-hidden='true'>&gt;&gt;</span>
               </a>
             </li>
           </ul>
         </nav>
-        <div className="mt-3 ml-auto mr-5">
+
+        <div className='mt-3 ml-auto mr-5'>
           <select value={itemsPerPage} onChange={this.handleChangeItemsPerPage}>
-            <option value="5">5 por página</option>
-            <option value="10">10 por página</option>
-            <option value="30">30 por página</option>
-            <option value="100">100 por página</option>
+            <option value='5'>5 por página</option>
+            <option value='10'>10 por página</option>
+            <option value='30'>30 por página</option>
+            <option value='100'>100 por página</option>
           </select>
         </div>
       </div>
     );
   }
 }
+

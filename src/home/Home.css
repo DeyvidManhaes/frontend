@@ -13,9 +13,24 @@
   margin-bottom: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+  /* Use 100% para a altura, para que o gráfico ocupe todo o espaço disponível */
+  width: 100%;
+  /* Mantém a largura completa da tela */
+  border: 10px solid #ddd;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
 
 .chart--container {
-  width: 100%;
+  width: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
