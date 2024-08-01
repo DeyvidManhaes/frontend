@@ -5,7 +5,7 @@ import CytoscapeComponent from 'react-cytoscapejs';
 import Cytoscape from 'cytoscape';
 
 // Componente para a tela em branco
-const BlankScreen = ({ elements, onCancel, tipolayout, handlelayoutChange }) => (
+const BlankScreen = ({ elements, onCancel, tipolayout}) => (
   
   <div className="blank-screen" style={{ position: 'relative', width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
     <h2>Gerador de Grafos</h2>
@@ -19,7 +19,7 @@ const BlankScreen = ({ elements, onCancel, tipolayout, handlelayoutChange }) => 
     <CytoscapeComponent
   elements={elements}
   layout={{
-    name: tipolayout || 'circle' ,
+    name: tipolayout,
     radius: 10, // Aumente o raio para ampliar o círculo
     spacingFactor: 0.5, // Ajuste o fator de espaçamento para aumentar a distância entre os nós
     avoidOverlap: true,
@@ -194,7 +194,7 @@ fetchTrabalhosEntreInstitutos = () => {
 
 
   updateFilteredData = () => {
-    const { producoes, pesquisadores, institutos, selectedInstitutos, selectedPesquisadores, selectedProducoes } = this.state;
+    const { producoes,pesquisadores, institutos, selectedInstitutos, selectedPesquisadores, selectedProducoes } = this.state;
 
     let filteredInstitutos = institutos;
     let filteredPesquisadores = pesquisadores;
@@ -231,14 +231,21 @@ fetchTrabalhosEntreInstitutos = () => {
   };
 
   applyFilters = async () => {
-  const { tipoVertice, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedPesquisadores, npInicio, npFim } = this.state;
+  const { tipoVertice, filteredProducoes, filteredPesquisadores, selectedInstitutos, selectedPesquisadores, selectedProducoes, npInicio, npFim } = this.state;
   let elements = [];
+
+  // Filtrando as produções pelo tipo selecionado
+  let filteredProducoesByType = filteredProducoes;
+  if (selectedProducoes.length > 0) {
+    filteredProducoesByType = filteredProducoes.filter(p => selectedProducoes.some(tipo => tipo.nome === p.tipo));
+  }
 
   if (tipoVertice === 'instituto') {
     let institutos = selectedInstitutos.length > 0 ? selectedInstitutos : this.state.institutos;
     const trabalhosEntreInstitutos = await this.fetchTrabalhosEntreInstitutos();
+
     institutos.forEach(instituto => {
-      let producoesCount = filteredProducoes.filter(p => p.pesquisador?.instituto?.nome === instituto).length;
+      let producoesCount = filteredProducoesByType.filter(p => p.pesquisador?.instituto?.nome === instituto).length;
       elements.push({
         data: {
           id: instituto,
@@ -262,11 +269,12 @@ fetchTrabalhosEntreInstitutos = () => {
       }
     });
 
-  } else if (tipoVertice === 'pesquisador') {
+   } else if (tipoVertice === 'pesquisador') {
     let pesquisadores = selectedPesquisadores.length > 0 ? selectedPesquisadores : filteredPesquisadores;
     const trabalhosEntrePesquisadores = await this.fetchTrabalhosEntrePesquisadores();
+
     pesquisadores.forEach(pesquisador => {
-      let producoesCount = filteredProducoes.filter(p => p.pesquisador?.id === pesquisador.id).length;
+      let producoesCount = filteredProducoesByType.filter(p => p.pesquisador?.id === pesquisador.id).length;
       elements.push({
         data: {
           id: pesquisador.nome,
@@ -314,10 +322,7 @@ fetchTrabalhosEntreInstitutos = () => {
   handleVerticeChange = (event) => {
     this.setState({ tipoVertice: event.target.value });
   };
-  handlelayoutChange = (event) => {
-    this.setState({ tipolayout: event.target.value });
-    return event;
-  };
+
 
   handleNpFimChange = (index, value) => {
     const { npInicio } = this.state;
@@ -462,9 +467,21 @@ fetchTrabalhosEntreInstitutos = () => {
             </select>
           </div>
         </div>
-        <div className='text-right mt-3'>
+        <div className='row'>
+          <div className='m-2 col-md-4'>
+             <label><h5>Tipo layout grafo:</h5></label>
+            <select value={tipolayout} onChange={(e) => this.setState({ tipolayout: e.target.value })} className="form-control">
+               <option value="breadthfirst">Breadthfirst</option>
+  <option value="circle">Circle</option>
+  <option value="concentric">Concentric</option>
+  <option value="random">Random</option>
+            </select>
+
+          </div>
+        <div className='text-right m-4 col-md-4'>
           <Button variant="contained" color="primary" onClick={this.applyFilters}>Aplicar</Button>
-        </div>
+          </div>
+          </div>
         <h2 className='mt-4'>Regras de Plotagem (Número de Produção - NP): </h2>
         <Table>
           <TableHead>
@@ -497,7 +514,7 @@ fetchTrabalhosEntreInstitutos = () => {
          {showGraphOverlay && (
           <div className="graph-overlay">
             <div style={{ width: '100%', height: '100%', position: 'fixed', top: 0, left: 0, zIndex: 100, backgroundColor: 'rgba(255, 255, 255, 0.9)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <BlankScreen elements={elements} onCancel={() => this.setState({ showGraphOverlay: false, showBlankScreen: false })} />
+              <BlankScreen elements={elements} tipolayout={tipolayout} onCancel={() => this.setState({ showGraphOverlay: false, showBlankScreen: false })} />
             </div>
           </div>
         )}

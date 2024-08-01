@@ -133,6 +133,7 @@ const Home = () => {
 
     return byInstituto && byPesquisador && byTipo && byAnoInicio && byAnoFim;
   });
+    
 
   setFilteredTrabalhos(trabalhosFiltrados);
   setCurrentPage(1);
@@ -265,7 +266,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Estrutura do gráfico visível sempre */}
+      {/* Estrutura do gráfico*/}
      <div className="row mt-1">
   <div className="col-md-12">
     <div className="chart-container" style={{ height: '400px' }}> {/* Ajuste a altura conforme necessário */}
@@ -295,7 +296,7 @@ const Home = () => {
      
 
       {/* Retângulos abaixo do gráfico principal */}
-      <div className="row mt-4">
+      <div className="row mt-1">
         <div className="col-md-3">
           <div className="info-box" onClick={() => navigate('/producao')}>
             <h5 className='mt-1'>Total Produção</h5>

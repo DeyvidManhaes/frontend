@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
 import { Button, Table, TableHead, TableBody, TableCell, TableRow } from '@mui/material';
-import { useLocation } from 'react-router-dom'; // Certifique-se de importar corretamente o useLocation se for necessário
-
 import './ProducaoList.css';
 
 export default class Producao extends Component {
@@ -20,6 +18,7 @@ export default class Producao extends Component {
       filteredTrabalhos: [],
       pesquisadores: [],
       institutos: [],
+      institutosFiltrados: [],
       nomesCitacao: [],
     };
   }
@@ -55,7 +54,7 @@ export default class Producao extends Component {
           return acc;
         }, []);
         const institutosUnicos = Array.from(new Set(institutos));
-        this.setState({ pesquisadores: data, institutos: institutosUnicos });
+        this.setState({ pesquisadores: data, institutos: institutosUnicos, institutosFiltrados: institutosUnicos });
       })
       .catch(error => console.error('Erro ao buscar pesquisadores:', error));
   };
@@ -102,8 +101,12 @@ export default class Producao extends Component {
     this.setState({ [name]: value }, () => {
       if (name === 'buscainstituto') {
         this.filterPesquisadoresByInstituto(value);
-      } else {
-        this.handleAplicarFiltro();
+      }
+      if (name === 'buscapesquisador') {
+        this.filterInstitutoByPesquisadores(value);
+      }
+      if (name === 'buscatipoproducao') {
+        this.filtertipoByPesquisadores(value);
       }
     });
   };
@@ -114,6 +117,16 @@ export default class Producao extends Component {
       return pesquisador.instituto && pesquisador.instituto.nome === instituto;
     });
     this.setState({ pesquisadoresFiltrados });
+  };
+
+  filterInstitutoByPesquisadores = pesquisadorId => {
+    const { pesquisadores } = this.state;
+    const pesquisador = pesquisadores.find(p => p.id === parseInt(pesquisadorId));
+    if (pesquisador) {
+      this.setState({ institutosFiltrados: [pesquisador.instituto.nome], buscainstituto: pesquisador.instituto.nome });
+    } else {
+      this.setState({ institutosFiltrados: this.state.institutos, buscainstituto: '' });
+    }
   };
 
   handleAplicarFiltro = () => {
@@ -186,13 +199,14 @@ export default class Producao extends Component {
   };
 
   render() {
-    const { currentPage, itemsPerPage, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, contador, filteredTrabalhos } = this.state;
+    const { currentPage, pesquisadores, institutosFiltrados, itemsPerPage, dataInicio, dataFim, buscainstituto, buscapesquisador, buscatipoproducao, contador, filteredTrabalhos } = this.state;
     const totalPages = Math.ceil(filteredTrabalhos.length / itemsPerPage);
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
     const anosTrabalhos = [...new Set(filteredTrabalhos.map(trabalho => trabalho.ano))];
     const anosFiltradosInicio = anosTrabalhos.filter(ano => !dataFim || ano <= dataFim).sort((a, b) => b - a);
     const anosFiltradosFim = anosTrabalhos.filter(ano => !dataInicio || ano >= dataInicio).sort((a, b) => b - a);
+    const pesquisadoresFiltrados = buscainstituto ? pesquisadores.filter(p => p.instituto.nome === buscainstituto) : pesquisadores;
 
     return (
       <div className='p-1 mt-5'>
@@ -203,7 +217,7 @@ export default class Producao extends Component {
               <label><h5>Ano Início:</h5></label>
               <select className='form-control' value={dataInicio} onChange={this.handleDataInicioChange}>
                 <option value=''>Todos</option>
-                                {anosFiltradosInicio.map(ano => (
+                {anosFiltradosInicio.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
               </select>
@@ -222,32 +236,37 @@ export default class Producao extends Component {
             </div>
           </div>
           <div className='row mt-1'>
-            <div className='col-md-3'>
+            <div className="col-md-3">
               <label><h5>Instituto:</h5></label>
-              <select name='buscainstituto' value={buscainstituto} onChange={this.handleFilterChange} className='form-control'>
-                <option value=''>Todos</option>
-                {this.state.institutos.map((instituto, index) => (
+              <select name="buscainstituto" value={buscainstituto} onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+                {institutosFiltrados.map((instituto, index) => (
                   <option key={index} value={instituto}>{instituto}</option>
                 ))}
               </select>
             </div>
-            <div className='col-md-3'>
+            <div className="col-md-3">
               <label><h5>Pesquisador:</h5></label>
-              <select name='buscapesquisador' value={buscapesquisador} onChange={this.handleFilterChange} className='form-control'>
-                <option value=''>Todos</option>
-                {this.state.pesquisadores.map(pesquisador => (
+              <select name="buscapesquisador" value={buscapesquisador} onChange={this.handleFilterChange} className="form-control">
+                <option value="">Todos</option>
+                {pesquisadoresFiltrados.map(pesquisador => (
                   <option key={pesquisador.id} value={pesquisador.id}>{pesquisador.nome}</option>
                 ))}
               </select>
             </div>
-            <div className='col-md-3'>
-              <label><h5>Tipo de Produção:</h5></label>
-              <select name='buscatipoproducao' value={buscatipoproducao} onChange={this.handleFilterChange} className='form-control'>
-                <option value=''>Todos</option>
-                {['Artigo Publicado', 'Livro Publicado'].map(tipo => (
-                  <option key={tipo} value={tipo}>{tipo}</option>
-                ))}
-              </select>
+            <div className="col-md-3">
+                <label><h5>Tipo de Produção:</h5></label>
+            <select name="buscatipoproducao" value={buscatipoproducao} onChange={this.handleFilterChange} className="form-control">
+              <option value="">Todos</option>
+              {filteredTrabalhos.reduce((acc, trabalho) => {
+                if (trabalho.tipo && trabalho.tipo.nome && !acc.includes(trabalho.tipo.nome)) {
+                  acc.push(trabalho.tipo.nome);
+                }
+                return acc;
+              }, []).map((tipo, index) => (
+                <option key={index} value={tipo}>{tipo}</option>
+              ))}
+            </select>
             </div>
           </div>
         </div>
@@ -313,4 +332,5 @@ export default class Producao extends Component {
     );
   }
 }
+
 
